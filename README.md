@@ -162,10 +162,14 @@ smart-complaint-system/
 Use these seeded demo accounts after starting the backend:
 
 - Citizen: `citizen@peoplevoice.local` / `password`
-- Officer 1: `officer@peoplevoice.local` / `password`
-- Officer 2: `officer2@peoplevoice.local` / `password`
-- Officer 3: `officer3@peoplevoice.local` / `password`
-- Admin: `admin@peoplevoice.local` / `password`
+- Admin Kiran: `admin@peoplevoice.local` / `password`
+- Officer Pradeep: `pradeep@peoplevoice.local` / `password`
+- Officer Rajesh: `rajesh@peoplevoice.local` / `password`
+- Officer Chaitanya: `chaitanya@peoplevoice.local` / `password`
+- Officer Nagur: `nagur@peoplevoice.local` / `password`
+- Officer Vinesh: `vinesh@peoplevoice.local` / `password`
+- Officer Jayaram: `jayaram@peoplevoice.local` / `password`
+- Officer Ramu: `ramu@peoplevoice.local` / `password`
 
 ## Getting Started
 
