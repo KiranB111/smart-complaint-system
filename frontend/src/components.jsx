@@ -10,7 +10,7 @@ export function HeroPanel({ children }) {
   );
 }
 
-export function AuthCard({ title, subtitle, children, error, submitLabel, onSubmit }) {
+export function AuthCard({ title, subtitle, children, error, submitLabel, onSubmit, footer }) {
   return (
     <div className="glass-card p-4 p-lg-5">
       <p className="eyebrow">People Voice</p>
@@ -21,6 +21,7 @@ export function AuthCard({ title, subtitle, children, error, submitLabel, onSubm
         {children}
         <button className="btn btn-primary btn-lg" type="submit">{submitLabel}</button>
       </form>
+      {footer ? <div className="mt-3 text-secondary">{footer}</div> : null}
     </div>
   );
 }
@@ -31,8 +32,9 @@ export function AppLayout({ user, onLogout, children }) {
       <nav className="navbar navbar-expand-lg nav-surface">
         <div className="container">
           <span className="navbar-brand fw-bold">People Voice</span>
-          <div className="d-flex align-items-center gap-3">
+          <div className="d-flex align-items-center gap-3 flex-wrap justify-content-end">
             <span className="badge text-bg-light">{user.role}</span>
+            {user.availability ? <span className="badge text-bg-warning">{user.availability}</span> : null}
             <span>{user.name}</span>
             <button className="btn btn-sm btn-outline-dark" onClick={onLogout}>Logout</button>
           </div>
@@ -103,7 +105,39 @@ export function ComplaintForm({ form, setForm, onSubmit, submitLabel }) {
   );
 }
 
-export function ComplaintTable({ complaints, user, onUpdate }) {
+export function OfficerAvailabilityPanel({ currentAvailability, onChange }) {
+  return (
+    <div className="d-flex gap-2 flex-wrap">
+      {["AVAILABLE", "BUSY", "OFFLINE"].map((value) => (
+        <button
+          key={value}
+          className={`btn ${currentAvailability === value ? "btn-dark" : "btn-outline-dark"}`}
+          onClick={() => onChange(value)}
+          type="button"
+        >
+          {value}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function OfficerAvailabilityList({ officers }) {
+  return (
+    <div className="d-grid gap-2">
+      {officers.map((officer) => (
+        <div className="metric-block" key={officer.id}>
+          <strong>{officer.name}</strong>
+          <span>{officer.email}</span>
+          <span className="badge text-bg-light w-fit">{officer.availability}</span>
+          <span className="small text-secondary">Rating: {(officer.averageRating || 0).toFixed(1)} / 5 ({officer.ratingCount || 0})</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function ComplaintTable({ complaints, user, officers, assignmentState, onAssignmentChange, onAssign, onOfficerUpdate, onCitizenConfirm }) {
   return (
     <div className="table-responsive">
       <table className="table align-middle">
@@ -114,7 +148,7 @@ export function ComplaintTable({ complaints, user, onUpdate }) {
             <th>Priority</th>
             <th>Assigned</th>
             <th>Reason</th>
-            {user.role !== "CITIZEN" ? <th>Action</th> : null}
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -122,20 +156,48 @@ export function ComplaintTable({ complaints, user, onUpdate }) {
             <tr key={complaint.id}>
               <td>
                 <strong>{complaint.title}</strong>
-                <div className="small text-secondary">{complaint.category} â€¢ {complaint.location}</div>
+                <div className="small text-secondary">{complaint.category} • {complaint.location}</div>
               </td>
               <td><span className="badge text-bg-light">{complaint.status}</span></td>
               <td><span className="badge priority-badge">{complaint.priority}</span></td>
-              <td>{complaint.assignedOfficerName || "Unassigned"}</td>
+              <td>
+                <div>{complaint.assignedOfficerName || "Unassigned"}</div>
+                {complaint.assignedOfficerAvailability ? <div className="small text-secondary">{complaint.assignedOfficerAvailability}</div> : null}
+                {complaint.officerRating ? <div className="small text-secondary">Rated {complaint.officerRating}/5</div> : null}
+              </td>
               <td className="small text-secondary">{complaint.priorityReason}</td>
-              {user.role !== "CITIZEN" ? (
-                <td>
-                  <div className="d-flex gap-2">
-                    <button className="btn btn-sm btn-outline-dark" onClick={() => onUpdate(complaint, "IN_PROGRESS")}>Start</button>
-                    <button className="btn btn-sm btn-dark" onClick={() => onUpdate(complaint, "RESOLVED")}>Resolve</button>
+              <td>
+                {user.role === "ADMIN" ? (
+                  <div className="d-grid gap-2">
+                    <select
+                      className="form-select form-select-sm"
+                      value={assignmentState[complaint.id] || complaint.assignedOfficerId || ""}
+                      onChange={(e) => onAssignmentChange(complaint.id, e.target.value)}
+                    >
+                      <option value="">Select officer</option>
+                      {officers.map((officer) => (
+                        <option key={officer.id} value={officer.id} disabled={officer.availability !== "AVAILABLE" && officer.id !== complaint.assignedOfficerId}>
+                          {officer.name} ({officer.availability})
+                        </option>
+                      ))}
+                    </select>
+                    <button className="btn btn-sm btn-outline-dark" onClick={() => onAssign(complaint.id)} type="button">Assign</button>
                   </div>
-                </td>
-              ) : null}
+                ) : null}
+                {user.role === "OFFICER" ? (
+                  <div className="d-flex gap-2 flex-wrap">
+                    <button className="btn btn-sm btn-outline-dark" onClick={() => onOfficerUpdate(complaint, "IN_PROGRESS")} type="button">Start</button>
+                    <button className="btn btn-sm btn-dark" onClick={() => onOfficerUpdate(complaint, "PENDING_CITIZEN_CONFIRMATION")} type="button">Mark Work Done</button>
+                  </div>
+                ) : null}
+                {user.role === "CITIZEN" && complaint.status === "PENDING_CITIZEN_CONFIRMATION" ? (
+                  <div className="d-flex gap-2 flex-wrap">
+                    <button className="btn btn-sm btn-dark" onClick={() => onCitizenConfirm(complaint.id, true)} type="button">Confirm Resolved</button>
+                    <button className="btn btn-sm btn-outline-dark" onClick={() => onCitizenConfirm(complaint.id, false)} type="button">Still Pending</button>
+                  </div>
+                ) : null}
+                {user.role === "CITIZEN" && complaint.status !== "PENDING_CITIZEN_CONFIRMATION" ? <span className="small text-secondary">Track progress</span> : null}
+              </td>
             </tr>
           ))}
         </tbody>

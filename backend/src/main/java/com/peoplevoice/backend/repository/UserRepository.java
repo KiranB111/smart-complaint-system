@@ -1,5 +1,6 @@
 package com.peoplevoice.backend.repository;
 
+import com.peoplevoice.backend.model.OfficerAvailability;
 import com.peoplevoice.backend.model.Role;
 import com.peoplevoice.backend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,4 +13,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
 
     List<User> findByRole(Role role);
+
+    List<User> findByRoleAndAvailability(Role role, OfficerAvailability availability);
 }

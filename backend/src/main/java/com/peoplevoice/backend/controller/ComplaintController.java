@@ -1,7 +1,9 @@
 package com.peoplevoice.backend.controller;
 
+import com.peoplevoice.backend.dto.ComplaintAssignmentRequest;
 import com.peoplevoice.backend.dto.ComplaintRequest;
 import com.peoplevoice.backend.dto.ComplaintResponse;
+import com.peoplevoice.backend.dto.CitizenResolutionRequest;
 import com.peoplevoice.backend.model.Role;
 import com.peoplevoice.backend.security.UserPrincipal;
 import com.peoplevoice.backend.service.ComplaintService;
@@ -45,6 +47,21 @@ public class ComplaintController {
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody ComplaintRequest request) {
         return complaintService.create(principal.getUser().getId(), request);
+    }
+
+    @PutMapping("/{id}/assign")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ComplaintResponse assign(@PathVariable Long id, @Valid @RequestBody ComplaintAssignmentRequest request) {
+        return complaintService.assign(id, request.officerId());
+    }
+
+    @PutMapping("/{id}/citizen-confirmation")
+    @PreAuthorize("hasRole('CITIZEN')")
+    public ComplaintResponse citizenConfirmation(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long id,
+            @Valid @RequestBody CitizenResolutionRequest request) {
+        return complaintService.confirmResolution(id, principal.getUser().getId(), request);
     }
 
     @GetMapping("/{id}")

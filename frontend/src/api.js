@@ -19,13 +19,17 @@ export const authApi = {
 };
 
 export const userApi = {
-  me: () => api.get("/users/me")
+  me: () => api.get("/users/me"),
+  officers: () => api.get("/users/officers"),
+  updateAvailability: (availability) => api.put("/users/me/availability", { availability })
 };
 
 export const complaintApi = {
   list: (params) => api.get("/complaints", { params }),
   create: (payload) => api.post("/complaints", payload),
   update: (id, payload) => api.put(`/complaints/${id}`, payload),
+  assign: (id, officerId) => api.put(`/complaints/${id}/assign`, { officerId }),
+  confirm: (id, payload) => api.put(`/complaints/${id}/citizen-confirmation`, payload),
   remove: (id) => api.delete(`/complaints/${id}`)
 };
 

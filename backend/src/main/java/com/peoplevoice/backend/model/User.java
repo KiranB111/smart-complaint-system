@@ -40,11 +40,24 @@ public class User {
     @Column(nullable = false, length = 20)
     private Role role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private OfficerAvailability availability;
+
+    @Column(nullable = false)
+    private Integer totalRatingScore = 0;
+
+    @Column(nullable = false)
+    private Integer ratingCount = 0;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     public void onCreate() {
         createdAt = LocalDateTime.now();
+        if (availability == null) {
+            availability = role == Role.OFFICER ? OfficerAvailability.AVAILABLE : OfficerAvailability.OFFLINE;
+        }
     }
 }

@@ -18,6 +18,8 @@ public record ComplaintResponse(
         String citizenName,
         Long assignedOfficerId,
         String assignedOfficerName,
+        String assignedOfficerAvailability,
+        Integer officerRating,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LocalDateTime resolvedAt

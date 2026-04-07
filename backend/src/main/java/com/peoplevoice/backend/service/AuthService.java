@@ -3,6 +3,7 @@ package com.peoplevoice.backend.service;
 import com.peoplevoice.backend.dto.AuthResponse;
 import com.peoplevoice.backend.dto.LoginRequest;
 import com.peoplevoice.backend.dto.RegisterRequest;
+import com.peoplevoice.backend.model.OfficerAvailability;
 import com.peoplevoice.backend.model.Role;
 import com.peoplevoice.backend.model.User;
 import com.peoplevoice.backend.repository.UserRepository;
@@ -32,7 +33,8 @@ public class AuthService {
         user.setEmail(request.email());
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setPhone(request.phone());
-        user.setRole(request.role() == null ? Role.CITIZEN : request.role());
+        user.setRole(Role.CITIZEN);
+        user.setAvailability(OfficerAvailability.OFFLINE);
         User saved = userRepository.save(user);
         return authResponse(saved);
     }

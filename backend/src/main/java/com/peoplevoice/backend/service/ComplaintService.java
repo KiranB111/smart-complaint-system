@@ -2,9 +2,10 @@ package com.peoplevoice.backend.service;
 
 import com.peoplevoice.backend.dto.ComplaintRequest;
 import com.peoplevoice.backend.dto.ComplaintResponse;
+import com.peoplevoice.backend.dto.CitizenResolutionRequest;
 import com.peoplevoice.backend.model.Complaint;
-import com.peoplevoice.backend.model.ComplaintPriority;
 import com.peoplevoice.backend.model.ComplaintStatus;
+import com.peoplevoice.backend.model.OfficerAvailability;
 import com.peoplevoice.backend.model.Role;
 import com.peoplevoice.backend.model.User;
 import com.peoplevoice.backend.repository.ComplaintRepository;
@@ -40,7 +41,8 @@ public class ComplaintService {
         Complaint complaint = role == Role.CITIZEN
                 ? complaintRepository.findByIdAndCitizenId(id, userId)
                 .orElseThrow(() -> new EntityNotFoundException("Complaint not found"))
-                : complaintRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Complaint not found"));
+                : complaintRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Complaint not found"));
         return toResponse(complaint);
     }
 
@@ -59,12 +61,32 @@ public class ComplaintService {
         complaint.setLocality(request.locality());
         complaint.setStatus(ComplaintStatus.OPEN);
         complaint.setCitizen(citizen);
+        complaint.setAssignedOfficer(null);
 
         PriorityService.PriorityDecision decision = priorityService.calculate(request.category(), request.locality());
         complaint.setPriority(decision.priority());
         complaint.setPriorityReason(decision.reason());
-        complaint.setAssignedOfficer(resolveOfficer(decision.priority(), request.assignedOfficerId()));
 
+        return toResponse(complaintRepository.save(complaint));
+    }
+
+    @Transactional
+    public ComplaintResponse assign(Long complaintId, Long officerId) {
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new EntityNotFoundException("Complaint not found"));
+        User officer = userRepository.findById(officerId)
+                .filter(user -> user.getRole() == Role.OFFICER)
+                .orElseThrow(() -> new EntityNotFoundException("Officer not found"));
+
+        if (officer.getAvailability() != OfficerAvailability.AVAILABLE) {
+            throw new IllegalArgumentException("Officer is not currently available");
+        }
+
+        releaseOfficer(complaint.getAssignedOfficer());
+        complaint.setAssignedOfficer(officer);
+        complaint.setStatus(ComplaintStatus.ASSIGNED);
+        officer.setAvailability(OfficerAvailability.BUSY);
+        userRepository.save(officer);
         return toResponse(complaintRepository.save(complaint));
     }
 
@@ -72,9 +94,9 @@ public class ComplaintService {
     public ComplaintResponse update(Long complaintId, Long actorId, Role role, ComplaintRequest request) {
         Complaint complaint = complaintRepository.findById(complaintId)
                 .orElseThrow(() -> new EntityNotFoundException("Complaint not found"));
-        if (role == Role.OFFICER && complaint.getAssignedOfficer() != null
-                && !complaint.getAssignedOfficer().getId().equals(actorId)) {
-            throw new IllegalArgumentException("Officer can only update assigned complaints");
+
+        if (role == Role.OFFICER) {
+            validateOfficerAccess(complaint, actorId);
         }
 
         complaint.setTitle(request.title());
@@ -85,17 +107,41 @@ public class ComplaintService {
         complaint.setLongitude(request.longitude());
         complaint.setLocality(request.locality());
 
-        ComplaintStatus status = request.status() == null ? complaint.getStatus() : ComplaintStatus.valueOf(request.status());
-        complaint.setStatus(status);
-        complaint.setAssignedOfficer(resolveOfficer(complaint.getPriority(), request.assignedOfficerId()));
-
         PriorityService.PriorityDecision decision = priorityService.calculate(request.category(), request.locality());
         complaint.setPriority(decision.priority());
         complaint.setPriorityReason(decision.reason());
 
-        if (status == ComplaintStatus.RESOLVED && complaint.getResolvedAt() == null) {
+        ComplaintStatus requestedStatus = request.status() == null
+                ? complaint.getStatus()
+                : ComplaintStatus.valueOf(request.status().toUpperCase());
+
+        if (role == Role.ADMIN && request.assignedOfficerId() != null) {
+            User assigned = userRepository.findById(request.assignedOfficerId())
+                    .filter(user -> user.getRole() == Role.OFFICER)
+                    .orElseThrow(() -> new IllegalArgumentException("Assigned officer not found"));
+            complaint.setAssignedOfficer(assigned);
+        }
+
+        applyWorkflowUpdate(complaint, requestedStatus, role);
+        return toResponse(complaintRepository.save(complaint));
+    }
+
+    @Transactional
+    public ComplaintResponse confirmResolution(Long complaintId, Long citizenId, CitizenResolutionRequest request) {
+        Complaint complaint = complaintRepository.findByIdAndCitizenId(complaintId, citizenId)
+                .orElseThrow(() -> new EntityNotFoundException("Complaint not found"));
+
+        if (complaint.getStatus() != ComplaintStatus.PENDING_CITIZEN_CONFIRMATION) {
+            throw new IllegalArgumentException("Complaint is not waiting for citizen confirmation");
+        }
+
+        if (Boolean.TRUE.equals(request.resolved())) {
+            complaint.setStatus(ComplaintStatus.RESOLVED);
             complaint.setResolvedAt(LocalDateTime.now());
-        } else if (status != ComplaintStatus.RESOLVED) {
+            applyOfficerRating(complaint, request.officerRating());
+            releaseOfficer(complaint.getAssignedOfficer());
+        } else {
+            complaint.setStatus(ComplaintStatus.IN_PROGRESS);
             complaint.setResolvedAt(null);
         }
 
@@ -131,10 +177,43 @@ public class ComplaintService {
                 complaint.getCitizen().getName(),
                 complaint.getAssignedOfficer() == null ? null : complaint.getAssignedOfficer().getId(),
                 complaint.getAssignedOfficer() == null ? null : complaint.getAssignedOfficer().getName(),
+                complaint.getAssignedOfficer() == null ? null : complaint.getAssignedOfficer().getAvailability().name(),
+                complaint.getOfficerRating(),
                 complaint.getCreatedAt(),
                 complaint.getUpdatedAt(),
                 complaint.getResolvedAt()
         );
+    }
+
+    private void validateOfficerAccess(Complaint complaint, Long actorId) {
+        if (complaint.getAssignedOfficer() == null || !complaint.getAssignedOfficer().getId().equals(actorId)) {
+            throw new IllegalArgumentException("Officer can only update assigned complaints");
+        }
+    }
+
+    private void applyWorkflowUpdate(Complaint complaint, ComplaintStatus requestedStatus, Role role) {
+        if (role == Role.ADMIN) {
+            switch (requestedStatus) {
+                case OPEN, ASSIGNED, IN_PROGRESS, REJECTED -> complaint.setStatus(requestedStatus);
+                case PENDING_CITIZEN_CONFIRMATION, RESOLVED -> {
+                    complaint.setStatus(ComplaintStatus.PENDING_CITIZEN_CONFIRMATION);
+                    complaint.setResolvedAt(null);
+                }
+            }
+            return;
+        }
+
+        if (role == Role.OFFICER) {
+            if (requestedStatus == ComplaintStatus.IN_PROGRESS) {
+                complaint.setStatus(ComplaintStatus.IN_PROGRESS);
+            } else if (requestedStatus == ComplaintStatus.PENDING_CITIZEN_CONFIRMATION
+                    || requestedStatus == ComplaintStatus.RESOLVED) {
+                complaint.setStatus(ComplaintStatus.PENDING_CITIZEN_CONFIRMATION);
+                complaint.setResolvedAt(null);
+            } else {
+                throw new IllegalArgumentException("Officer can only mark complaint as in progress or ready for citizen confirmation");
+            }
+        }
     }
 
     private ComplaintStatus parseStatus(String status) {
@@ -145,17 +224,28 @@ public class ComplaintService {
         return category == null || category.isBlank() ? null : category.trim();
     }
 
-    private User resolveOfficer(ComplaintPriority priority, Long officerId) {
-        if (officerId != null) {
-            return userRepository.findById(officerId)
-                    .filter(user -> user.getRole() == Role.OFFICER)
-                    .orElseThrow(() -> new IllegalArgumentException("Assigned officer not found"));
+    private void releaseOfficer(User officer) {
+        if (officer == null) {
+            return;
         }
+        officer.setAvailability(OfficerAvailability.AVAILABLE);
+        userRepository.save(officer);
+    }
 
-        List<User> officers = userRepository.findByRole(Role.OFFICER);
-        if (officers.isEmpty()) {
-            return null;
+    private void applyOfficerRating(Complaint complaint, Integer officerRating) {
+        if (officerRating == null) {
+            return;
         }
-        return officers.get(priority.ordinal() % officers.size());
+        if (complaint.getAssignedOfficer() == null) {
+            return;
+        }
+        if (complaint.getOfficerRating() != null) {
+            return;
+        }
+        User officer = complaint.getAssignedOfficer();
+        officer.setTotalRatingScore(officer.getTotalRatingScore() + officerRating);
+        officer.setRatingCount(officer.getRatingCount() + 1);
+        complaint.setOfficerRating(officerRating);
+        userRepository.save(officer);
     }
 }

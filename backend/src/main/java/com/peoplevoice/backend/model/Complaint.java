@@ -58,6 +58,8 @@ public class Complaint {
     @Column(nullable = false, length = 180)
     private String priorityReason;
 
+    private Integer officerRating;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "citizen_id")
     private User citizen;
