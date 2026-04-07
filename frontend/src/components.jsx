@@ -1,3 +1,12 @@
+const dateTimeFormatter = new Intl.DateTimeFormat("en-IN", {
+  dateStyle: "medium",
+  timeStyle: "short"
+});
+
+function formatDateTime(value) {
+  return value ? dateTimeFormatter.format(new Date(value)) : "";
+}
+
 export function HeroPanel({ children }) {
   return (
     <div className="hero-shell">
@@ -60,6 +69,11 @@ export function AppLayout({ user, onLogout, notifications, onMarkRead, children 
                   <button key={item.id} className={`notification-item ${item.isRead ? "read" : "unread"}`} onClick={() => onMarkRead(item.id)} type="button">
                     <strong>{item.title}</strong>
                     <span>{item.message}</span>
+                    <div className="notification-meta">
+                      <span className="channel-chip">Email {item.emailStatus}</span>
+                      <span className="channel-chip">SMS {item.smsStatus}</span>
+                    </div>
+                    <small className="tiny-text">{formatDateTime(item.createdAt)}</small>
                   </button>
                 ))}
               </div>
@@ -140,6 +154,38 @@ export function ComplaintForm({ form, setForm, files, setFiles, onSubmit, submit
   );
 }
 
+export function ResolutionModal({ open, rating, setRating, onConfirm, onCancel }) {
+  if (!open) return null;
+
+  return (
+    <div className="modal-backdrop-shell" role="presentation">
+      <div className="resolution-modal">
+        <p className="eyebrow mb-2">Citizen Confirmation</p>
+        <h3>Confirm complaint resolution</h3>
+        <p className="text-secondary mb-3">
+          If the work in your locality is completed, rate the officer before marking the complaint as resolved.
+        </p>
+        <div className="rating-row mb-3">
+          {[1, 2, 3, 4, 5].map((value) => (
+            <button
+              key={value}
+              type="button"
+              className={`rating-chip ${rating === value ? "active" : ""}`}
+              onClick={() => setRating(value)}
+            >
+              {value}
+            </button>
+          ))}
+        </div>
+        <div className="d-flex gap-2 justify-content-end">
+          <button className="btn btn-outline-dark" type="button" onClick={onCancel}>Cancel</button>
+          <button className="btn btn-dark" type="button" onClick={onConfirm}>Submit Rating</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function OfficerAvailabilityPanel({ currentAvailability, onChange }) {
   return (
     <div className="d-flex gap-2 flex-wrap">
@@ -172,6 +218,53 @@ export function OfficerAvailabilityList({ officers }) {
   );
 }
 
+export function OfficerManagementList({ officers, onChange, onSave, onToggleActive }) {
+  return (
+    <div className="d-grid gap-3">
+      {officers.map((officer) => (
+        <div className="metric-block" key={officer.id}>
+          <div className="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+            <strong>{officer.name}</strong>
+            <div className="d-flex gap-2 flex-wrap">
+              <span className={`badge ${officer.active ? "text-bg-success" : "text-bg-secondary"}`}>
+                {officer.active ? "Active" : "Inactive"}
+              </span>
+              <span className="badge text-bg-light">{officer.availability}</span>
+            </div>
+          </div>
+          <div className="row g-2 mt-1">
+            <div className="col-md-6">
+              <input className="form-control form-control-sm" value={officer.name} onChange={(e) => onChange(officer.id, "name", e.target.value)} />
+            </div>
+            <div className="col-md-6">
+              <input className="form-control form-control-sm" value={officer.email} onChange={(e) => onChange(officer.id, "email", e.target.value)} />
+            </div>
+            <div className="col-md-6">
+              <input className="form-control form-control-sm" value={officer.phone || ""} onChange={(e) => onChange(officer.id, "phone", e.target.value)} placeholder="Phone" />
+            </div>
+            <div className="col-md-6">
+              <select className="form-select form-select-sm" value={officer.availability} onChange={(e) => onChange(officer.id, "availability", e.target.value)} disabled={!officer.active}>
+                <option value="AVAILABLE">AVAILABLE</option>
+                <option value="BUSY">BUSY</option>
+                <option value="OFFLINE">OFFLINE</option>
+              </select>
+            </div>
+          </div>
+          <div className="d-flex justify-content-between align-items-center gap-2 flex-wrap mt-2">
+            <span className="small text-secondary">Rating: {(officer.averageRating || 0).toFixed(1)} / 5 ({officer.ratingCount || 0})</span>
+            <div className="d-flex gap-2">
+              <button className="btn btn-sm btn-outline-dark" type="button" onClick={() => onToggleActive(officer)}>
+                {officer.active ? "Deactivate" : "Activate"}
+              </button>
+              <button className="btn btn-sm btn-dark" type="button" onClick={() => onSave(officer)}>Save</button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function OfficerCreateForm({ form, setForm, onSubmit }) {
   return (
     <form className="d-grid gap-2" onSubmit={onSubmit}>
@@ -196,7 +289,8 @@ export function AttachmentGallery({ attachments }) {
       {attachments.map((attachment) => (
         <a key={attachment.id} className="attachment-card" href={`http://localhost:8080${attachment.url}`} target="_blank" rel="noreferrer">
           <span>{attachment.fileName}</span>
-          <small>{attachment.uploadedByRole}</small>
+          <small>{attachment.attachmentType.replaceAll("_", " ")}</small>
+          <small>{attachment.uploadedByRole} • {formatDateTime(attachment.createdAt)}</small>
         </a>
       ))}
     </div>
@@ -214,10 +308,22 @@ export function TimelineList({ timeline }) {
             <strong>{item.actorName} ({item.actorRole})</strong>
             <div className="small text-secondary">{item.message}</div>
             <div className="tiny-text">{item.fromStatus || "Created"} to {item.toStatus || "Created"}</div>
+            <div className="tiny-text">{formatDateTime(item.createdAt)}</div>
           </div>
         </div>
       ))}
     </div>
+  );
+}
+
+export function ProofUploadPanel({ files, setFiles, onSubmit }) {
+  return (
+    <form className="d-grid gap-2" onSubmit={onSubmit}>
+      <label className="form-label fw-semibold mb-0">Upload completion proof</label>
+      <input className="form-control form-control-sm" type="file" multiple accept="image/*" onChange={(e) => setFiles(Array.from(e.target.files || []))} />
+      {files.length ? <div className="small text-secondary">{files.length} file(s) selected for upload</div> : null}
+      <button className="btn btn-dark btn-sm" type="submit" disabled={!files.length}>Upload Proof</button>
+    </form>
   );
 }
 
@@ -240,7 +346,7 @@ export function ComplaintTable({ complaints, user, officers, assignmentState, on
             <tr key={complaint.id}>
               <td>
                 <button className="link-button" onClick={() => onSelectComplaint(complaint)} type="button">{complaint.title}</button>
-                <div className="small text-secondary">{complaint.category} � {complaint.location}</div>
+                <div className="small text-secondary">{complaint.category} • {complaint.location}</div>
               </td>
               <td><span className="badge text-bg-light">{complaint.status}</span></td>
               <td><span className="badge priority-badge">{complaint.priority}</span></td>

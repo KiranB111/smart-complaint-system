@@ -33,6 +33,14 @@ public class AppNotification {
     @Column(nullable = false)
     private boolean isRead;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private NotificationDeliveryStatus emailStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private NotificationDeliveryStatus smsStatus;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 

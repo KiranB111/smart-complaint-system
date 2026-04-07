@@ -22,7 +22,9 @@ export const userApi = {
   me: () => api.get("/users/me"),
   officers: () => api.get("/users/officers"),
   updateAvailability: (availability) => api.put("/users/me/availability", { availability }),
-  createOfficer: (payload) => api.post("/users/officers", payload)
+  createOfficer: (payload) => api.post("/users/officers", payload),
+  updateOfficer: (id, payload) => api.put(`/users/officers/${id}`, payload),
+  setOfficerActive: (id, active) => api.put(`/users/officers/${id}/active`, { active })
 };
 
 export const complaintApi = {

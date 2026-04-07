@@ -8,6 +8,8 @@ public record NotificationResponse(
         String title,
         String message,
         boolean isRead,
+        String emailStatus,
+        String smsStatus,
         LocalDateTime createdAt
 ) {
 }

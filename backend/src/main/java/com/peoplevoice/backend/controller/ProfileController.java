@@ -1,8 +1,9 @@
 package com.peoplevoice.backend.controller;
 
 import com.peoplevoice.backend.dto.CreateOfficerRequest;
-import com.peoplevoice.backend.dto.UserProfileResponse;
 import com.peoplevoice.backend.dto.OfficerAvailabilityUpdateRequest;
+import com.peoplevoice.backend.dto.UpdateOfficerRequest;
+import com.peoplevoice.backend.dto.UserProfileResponse;
 import com.peoplevoice.backend.model.OfficerAvailability;
 import com.peoplevoice.backend.security.UserPrincipal;
 import com.peoplevoice.backend.service.UserService;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -52,5 +54,21 @@ public class ProfileController {
     @PreAuthorize("hasRole('ADMIN')")
     public UserProfileResponse createOfficer(@Valid @RequestBody CreateOfficerRequest request) {
         return userService.createOfficer(request);
+    }
+
+    @PutMapping("/officers/{officerId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserProfileResponse updateOfficer(
+            @PathVariable Long officerId,
+            @Valid @RequestBody UpdateOfficerRequest request) {
+        return userService.updateOfficer(officerId, request);
+    }
+
+    @PutMapping("/officers/{officerId}/active")
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserProfileResponse setOfficerActive(
+            @PathVariable Long officerId,
+            @RequestBody java.util.Map<String, Boolean> request) {
+        return userService.setOfficerActive(officerId, Boolean.TRUE.equals(request.get("active")));
     }
 }

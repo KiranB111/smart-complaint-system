@@ -86,7 +86,7 @@ public class ComplaintService {
         User admin = userRepository.findById(adminId)
                 .orElseThrow(() -> new EntityNotFoundException("Admin not found"));
         User officer = userRepository.findById(officerId)
-                .filter(user -> user.getRole() == Role.OFFICER)
+                .filter(user -> user.getRole() == Role.OFFICER && user.isActive())
                 .orElseThrow(() -> new EntityNotFoundException("Officer not found"));
 
         if (officer.getAvailability() != OfficerAvailability.AVAILABLE) {
@@ -108,7 +108,10 @@ public class ComplaintService {
 
     @Transactional
     public ComplaintResponse autoAssign(Long complaintId, Long adminId) {
-        List<User> availableOfficers = userRepository.findByRoleAndAvailability(Role.OFFICER, OfficerAvailability.AVAILABLE);
+        List<User> availableOfficers = userRepository.findByRoleAndAvailability(Role.OFFICER, OfficerAvailability.AVAILABLE)
+                .stream()
+                .filter(User::isActive)
+                .toList();
         if (availableOfficers.isEmpty()) {
             throw new IllegalArgumentException("No available officers to assign");
         }
@@ -153,6 +156,9 @@ public class ComplaintService {
             User assigned = userRepository.findById(request.assignedOfficerId())
                     .filter(user -> user.getRole() == Role.OFFICER)
                     .orElseThrow(() -> new IllegalArgumentException("Assigned officer not found"));
+            if (!assigned.isActive()) {
+                throw new IllegalArgumentException("Assigned officer is deactivated");
+            }
             complaint.setAssignedOfficer(assigned);
         }
 
@@ -210,9 +216,10 @@ public class ComplaintService {
         if (role == Role.OFFICER) {
             validateOfficerAccess(complaint, actorId);
         }
+        String attachmentType = role == Role.OFFICER ? "completion proof" : "complaint evidence";
         attachmentService.store(complaint, file, role);
-        timelineService.record(complaint, actor.getName(), role, complaint.getStatus().name(), complaint.getStatus().name(), "Attachment uploaded: " + file.getOriginalFilename());
-        notificationService.notifyUser(complaint.getCitizen(), NotificationType.STATUS_UPDATED, "New complaint attachment", "A new file was uploaded for " + complaint.getTitle());
+        timelineService.record(complaint, actor.getName(), role, complaint.getStatus().name(), complaint.getStatus().name(), "Uploaded " + attachmentType + ": " + file.getOriginalFilename());
+        notificationService.notifyUser(complaint.getCitizen(), NotificationType.STATUS_UPDATED, "New complaint attachment", "A new " + attachmentType + " file was uploaded for " + complaint.getTitle());
         return toResponse(complaint);
     }
 
@@ -298,7 +305,7 @@ public class ComplaintService {
         if (officer == null) {
             return;
         }
-        officer.setAvailability(OfficerAvailability.AVAILABLE);
+        officer.setAvailability(officer.isActive() ? OfficerAvailability.AVAILABLE : OfficerAvailability.OFFLINE);
         userRepository.save(officer);
     }
 

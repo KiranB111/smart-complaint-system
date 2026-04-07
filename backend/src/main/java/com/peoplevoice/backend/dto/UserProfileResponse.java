@@ -11,6 +11,7 @@ public record UserProfileResponse(
         Role role,
         OfficerAvailability availability,
         Double averageRating,
-        Integer ratingCount
+        Integer ratingCount,
+        Boolean active
 ) {
 }

@@ -51,6 +51,9 @@ public class User {
     private Integer ratingCount = 0;
 
     @Column(nullable = false)
+    private boolean active = true;
+
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @PrePersist

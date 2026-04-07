@@ -12,6 +12,9 @@ import {
   OfficerAvailabilityList,
   OfficerAvailabilityPanel,
   OfficerCreateForm,
+  OfficerManagementList,
+  ProofUploadPanel,
+  ResolutionModal,
   SectionCard,
   TimelineList
 } from "./components";
@@ -132,8 +135,10 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [form, setForm] = useState(emptyComplaint);
   const [files, setFiles] = useState([]);
+  const [proofFiles, setProofFiles] = useState([]);
   const [officerForm, setOfficerForm] = useState(emptyOfficer);
   const [message, setMessage] = useState("");
+  const [resolutionDialog, setResolutionDialog] = useState({ open: false, complaintId: null, rating: 5 });
 
   const loadComplaints = async () => {
     const { data } = await complaintApi.list();
@@ -234,18 +239,25 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
   };
 
   const confirmComplaint = async (complaintId, resolved) => {
-    let officerRating = null;
     if (resolved) {
-      const value = window.prompt("Rate the officer's work from 1 to 5");
-      if (value === null) return;
-      officerRating = Number(value);
-      if (!Number.isInteger(officerRating) || officerRating < 1 || officerRating > 5) {
-        window.alert("Please enter a whole number between 1 and 5.");
-        return;
-      }
+      setResolutionDialog({ open: true, complaintId, rating: 5 });
+      return;
     }
-    await complaintApi.confirm(complaintId, { resolved, officerRating });
+    await complaintApi.confirm(complaintId, { resolved, officerRating: null });
     await Promise.all([loadComplaints(), loadOfficers(), loadNotifications()]);
+  };
+
+  const submitResolutionRating = async () => {
+    await complaintApi.confirm(resolutionDialog.complaintId, {
+      resolved: true,
+      officerRating: resolutionDialog.rating
+    });
+    setResolutionDialog({ open: false, complaintId: null, rating: 5 });
+    await Promise.all([loadComplaints(), loadOfficers(), loadNotifications()]);
+  };
+
+  const closeResolutionDialog = () => {
+    setResolutionDialog({ open: false, complaintId: null, rating: 5 });
   };
 
   const updateAvailability = async (availability) => {
@@ -259,6 +271,28 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
     await userApi.createOfficer(officerForm);
     setOfficerForm(emptyOfficer);
     await Promise.all([loadOfficers(), loadNotifications()]);
+  };
+
+  const changeOfficerDraft = (officerId, field, value) => {
+    setOfficers((current) => current.map((officer) => (
+      officer.id === officerId ? { ...officer, [field]: value } : officer
+    )));
+  };
+
+  const saveOfficer = async (officer) => {
+    await userApi.updateOfficer(officer.id, {
+      name: officer.name,
+      email: officer.email,
+      phone: officer.phone,
+      availability: officer.availability,
+      active: officer.active
+    });
+    await Promise.all([loadOfficers(), loadNotifications()]);
+  };
+
+  const toggleOfficerActive = async (officer) => {
+    await userApi.setOfficerActive(officer.id, !officer.active);
+    await Promise.all([loadOfficers(), loadNotifications(), loadComplaints()]);
   };
 
   const markNotificationRead = async (id) => {
@@ -275,12 +309,29 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
     link.click();
   };
 
+  const uploadOfficerProof = async (event) => {
+    event.preventDefault();
+    if (!selectedComplaint || !proofFiles.length) return;
+    for (const file of proofFiles) {
+      await complaintApi.uploadAttachment(selectedComplaint.id, file);
+    }
+    setProofFiles([]);
+    await Promise.all([loadComplaints(), loadNotifications()]);
+  };
+
   const complaintList = user.role === "OFFICER"
     ? complaints.filter((item) => item.assignedOfficerId === user.id)
     : complaints;
 
   return (
     <AppLayout user={user} onLogout={onLogout} notifications={notifications} onMarkRead={markNotificationRead}>
+      <ResolutionModal
+        open={resolutionDialog.open}
+        rating={resolutionDialog.rating}
+        setRating={(rating) => setResolutionDialog((current) => ({ ...current, rating }))}
+        onConfirm={submitResolutionRating}
+        onCancel={closeResolutionDialog}
+      />
       <DashboardCards items={complaintCards} />
 
       <div className="row g-4">
@@ -314,7 +365,12 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
                 <SectionCard title="Officer management" description="Create officers and monitor availability and ratings.">
                   <OfficerCreateForm form={officerForm} setForm={setOfficerForm} onSubmit={createOfficer} />
                   <hr />
-                  <OfficerAvailabilityList officers={officers} />
+                  <OfficerManagementList
+                    officers={officers}
+                    onChange={changeOfficerDraft}
+                    onSave={saveOfficer}
+                    onToggleActive={toggleOfficerActive}
+                  />
                 </SectionCard>
                 <SectionCard title="Analytics and exports" description="Generate reports and monitor service performance.">
                   {analytics ? (
@@ -361,6 +417,12 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
               <div className="col-lg-4">
                 <SectionCard title="My availability" description="Set your capacity so admin can route tasks more effectively.">
                   <OfficerAvailabilityPanel currentAvailability={user.availability} onChange={updateAvailability} />
+                  <hr />
+                  {selectedComplaint && selectedComplaint.assignedOfficerId === user.id ? (
+                    <ProofUploadPanel files={proofFiles} setFiles={setProofFiles} onSubmit={uploadOfficerProof} />
+                  ) : (
+                    <p className="small text-secondary mb-0">Select one of your assigned complaints below to upload completion proof images.</p>
+                  )}
                 </SectionCard>
               </div>
             </div>
@@ -391,6 +453,13 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
                 <div className="col-lg-5">
                   <h5>Attachments</h5>
                   <AttachmentGallery attachments={selectedComplaint.attachments} />
+                  {user.role === "ADMIN" ? (
+                    <>
+                      <hr />
+                      <h5 className="mb-2">Officer availability snapshot</h5>
+                      <OfficerAvailabilityList officers={officers} />
+                    </>
+                  ) : null}
                 </div>
                 <div className="col-lg-7">
                   <h5>Timeline</h5>

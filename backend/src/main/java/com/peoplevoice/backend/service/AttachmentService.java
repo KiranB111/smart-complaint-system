@@ -38,6 +38,7 @@ public class AttachmentService {
             attachment.setFileName(file.getOriginalFilename());
             attachment.setFilePath(target.toString());
             attachment.setUploadedByRole(role.name());
+            attachment.setAttachmentType(role == Role.OFFICER ? "OFFICER_COMPLETION_PROOF" : "CITIZEN_EVIDENCE");
             ComplaintAttachment saved = attachmentRepository.save(attachment);
             return toResponse(saved);
         } catch (IOException exception) {
@@ -63,6 +64,7 @@ public class AttachmentService {
                 attachment.getFileName(),
                 "/api/public/files/" + attachment.getId(),
                 attachment.getUploadedByRole(),
+                attachment.getAttachmentType(),
                 attachment.getCreatedAt()
         );
     }

@@ -29,6 +29,9 @@ public class ComplaintAttachment {
     @Column(nullable = false, length = 20)
     private String uploadedByRole;
 
+    @Column(nullable = false, length = 40)
+    private String attachmentType;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 

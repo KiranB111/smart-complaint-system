@@ -14,10 +14,12 @@ This project is designed as a portfolio-ready civic tech system that demonstrate
 - Citizen-side final resolution confirmation
 - Officer ratings based on completed work
 - Complaint image upload and attachment review
+- Officer completion proof uploads from the officer dashboard
 - Timeline tracking for each complaint
 - In-app notifications for citizens, officers, and admin
+- Email/SMS-style notification delivery status badges
 - Smart auto-assignment based on availability, workload, and ratings
-- Admin-managed officer creation
+- Admin-managed officer creation, editing, and activation control
 - Analytics reporting with PDF and Excel export
 
 ## Problem Statement
@@ -110,6 +112,8 @@ Each complaint maintains a timeline of important workflow events such as submiss
 ### File Uploads and Evidence
 
 Citizens can upload image evidence while submitting or updating complaints. Attachments remain visible in the complaint detail view so admins and officers can understand the issue before acting on it.
+
+Officers can also upload completion-proof images from their dashboard before moving a complaint to citizen confirmation, making the resolution process more transparent for both citizens and admins.
 
 ## Screenshots
 
@@ -282,6 +286,8 @@ This keeps credentials out of source control while still allowing local defaults
 - `GET /api/users/me`
 - `GET /api/users/officers`
 - `POST /api/users/officers`
+- `PUT /api/users/officers/{id}`
+- `PUT /api/users/officers/{id}/active`
 - `PUT /api/users/me/availability`
 
 ### Notifications and Public Files
@@ -305,7 +311,7 @@ This keeps credentials out of source control while still allowing local defaults
 - Complaint resolution is not final until the citizen confirms it.
 - Officer ratings are derived from completed complaint confirmations.
 - Complaint attachments and timeline entries are persisted as first-class records.
-- Notifications are generated for key workflow events across roles.
+- Notifications are generated for key workflow events across roles with email/SMS-style delivery status indicators.
 - The frontend provides separate role-based experiences for citizens, admins, and officers.
 
 ## Why This Project Works Well in a Portfolio
@@ -318,7 +324,9 @@ People Voice demonstrates more than basic CRUD. It combines:
 - smart routing using workload and performance signals
 - citizen-driven final resolution logic
 - complaint evidence upload and review
+- officer completion-proof uploads
 - timeline visibility and in-app notifications
+- admin staff management with activation control
 - officer feedback and rating aggregation
 - export/reporting functionality
 - a practical civic technology use case

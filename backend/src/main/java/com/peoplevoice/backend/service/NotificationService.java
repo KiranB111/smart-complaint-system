@@ -2,6 +2,7 @@ package com.peoplevoice.backend.service;
 
 import com.peoplevoice.backend.dto.NotificationResponse;
 import com.peoplevoice.backend.model.AppNotification;
+import com.peoplevoice.backend.model.NotificationDeliveryStatus;
 import com.peoplevoice.backend.model.NotificationType;
 import com.peoplevoice.backend.model.Role;
 import com.peoplevoice.backend.model.User;
@@ -35,6 +36,8 @@ public class NotificationService {
         notification.setTitle(title);
         notification.setMessage(message);
         notification.setRead(false);
+        notification.setEmailStatus(hasValue(recipient.getEmail()) ? NotificationDeliveryStatus.SENT : NotificationDeliveryStatus.SKIPPED);
+        notification.setSmsStatus(hasValue(recipient.getPhone()) ? NotificationDeliveryStatus.SENT : NotificationDeliveryStatus.SKIPPED);
         notificationRepository.save(notification);
     }
 
@@ -61,7 +64,13 @@ public class NotificationService {
                 notification.getTitle(),
                 notification.getMessage(),
                 notification.isRead(),
+                notification.getEmailStatus().name(),
+                notification.getSmsStatus().name(),
                 notification.getCreatedAt()
         );
+    }
+
+    private boolean hasValue(String value) {
+        return value != null && !value.isBlank();
     }
 }

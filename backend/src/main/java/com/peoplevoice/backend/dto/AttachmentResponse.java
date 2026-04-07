@@ -7,6 +7,7 @@ public record AttachmentResponse(
         String fileName,
         String url,
         String uploadedByRole,
+        String attachmentType,
         LocalDateTime createdAt
 ) {
 }

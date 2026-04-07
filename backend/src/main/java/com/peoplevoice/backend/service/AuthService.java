@@ -44,6 +44,9 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(request.email(), request.password()));
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
+        if (!user.isActive()) {
+            throw new IllegalArgumentException("User account is deactivated");
+        }
         return authResponse(user);
     }
 
@@ -51,6 +54,9 @@ public class AuthService {
         String username = jwtService.extractUsername(refreshToken);
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
+        if (!user.isActive()) {
+            throw new IllegalArgumentException("User account is deactivated");
+        }
         if (!jwtService.isRefreshTokenValid(refreshToken, user)) {
             throw new IllegalArgumentException("Invalid refresh token");
         }

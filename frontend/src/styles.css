@@ -120,6 +120,67 @@ body {
   background: rgba(15, 118, 110, 0.08);
 }
 
+.notification-meta {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.channel-chip {
+  width: fit-content;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(21, 34, 56, 0.08);
+  font-size: 0.72rem;
+  color: #51607b;
+}
+
+.modal-backdrop-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(21, 34, 56, 0.3);
+  backdrop-filter: blur(6px);
+}
+
+.resolution-modal {
+  width: min(100%, 480px);
+  padding: 1.75rem;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--soft-border);
+  box-shadow: 0 24px 60px rgba(21, 34, 56, 0.16);
+}
+
+.resolution-modal h3 {
+  margin-bottom: 0.5rem;
+  font-weight: 800;
+}
+
+.rating-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.rating-chip {
+  min-width: 52px;
+  padding: 0.75rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(21, 34, 56, 0.12);
+  background: rgba(21, 34, 56, 0.04);
+  font-weight: 700;
+}
+
+.rating-chip.active {
+  background: linear-gradient(135deg, #0f766e, #22c55e);
+  color: white;
+  border-color: transparent;
+}
+
 .link-button {
   background: none;
   border: none;
@@ -142,6 +203,10 @@ body {
   text-decoration: none;
   color: var(--ink);
   background: rgba(21, 34, 56, 0.05);
+}
+
+.attachment-card small {
+  color: #51607b;
 }
 
 .timeline-list {
