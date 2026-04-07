@@ -35,16 +35,19 @@ public class ComplaintService {
     private final NotificationService notificationService;
     private final RealtimeEventService realtimeEventService;
 
+    @Transactional(readOnly = true)
     public List<ComplaintResponse> findAll(String status, String category) {
         return complaintRepository.search(parseStatus(status), normalize(category)).stream().map(this::toResponse).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<ComplaintResponse> findForCitizen(Long citizenId, String status, String category) {
         return complaintRepository.searchForCitizen(citizenId, parseStatus(status), normalize(category)).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public ComplaintResponse getById(Long id, Long userId, Role role) {
         Complaint complaint = role == Role.CITIZEN
                 ? complaintRepository.findByIdAndCitizenId(id, userId)

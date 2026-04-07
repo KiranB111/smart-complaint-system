@@ -13,6 +13,8 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
 
     @Query("""
             select c from Complaint c
+            join fetch c.citizen citizen
+            left join fetch c.assignedOfficer assignedOfficer
             where (:status is null or c.status = :status)
               and (:category is null or lower(c.category) = lower(:category))
             order by
@@ -28,6 +30,8 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
 
     @Query("""
             select c from Complaint c
+            join fetch c.citizen citizen
+            left join fetch c.assignedOfficer assignedOfficer
             where c.citizen.id = :citizenId
               and (:status is null or c.status = :status)
               and (:category is null or lower(c.category) = lower(:category))
@@ -35,6 +39,12 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
             """)
     List<Complaint> searchForCitizen(Long citizenId, ComplaintStatus status, String category);
 
+    @Query("""
+            select c from Complaint c
+            join fetch c.citizen citizen
+            left join fetch c.assignedOfficer assignedOfficer
+            where c.id = :id and c.citizen.id = :citizenId
+            """)
     Optional<Complaint> findByIdAndCitizenId(Long id, Long citizenId);
 
     long countByStatus(ComplaintStatus status);

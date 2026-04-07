@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api").replace(/\/$/, "");
+
 const api = axios.create({
-  baseURL: "http://localhost:8080/api"
+  baseURL: apiBaseUrl
 });
 
 api.interceptors.request.use((config) => {
@@ -54,5 +56,7 @@ export const notificationApi = {
   list: () => api.get("/notifications"),
   markRead: (id) => api.put(`/notifications/${id}/read`)
 };
+
+export const realtimeStreamUrl = () => `${apiBaseUrl}/stream`;
 
 export default api;

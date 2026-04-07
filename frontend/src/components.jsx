@@ -35,7 +35,7 @@ export function AuthCard({ title, subtitle, children, error, submitLabel, onSubm
   );
 }
 
-export function AppLayout({ user, onLogout, notifications, onMarkRead, children }) {
+export function AppLayout({ user, onLogout, notifications, onMarkRead, showNotificationsPanel = true, children }) {
   const unread = notifications.filter((item) => !item.isRead).length;
   return (
     <div className="app-shell">
@@ -56,29 +56,31 @@ export function AppLayout({ user, onLogout, notifications, onMarkRead, children 
       </nav>
       <main className="container py-4 py-lg-5">
         <div className="row g-4">
-          <div className="col-xl-9">{children}</div>
-          <div className="col-xl-3">
-            <section className="section-card sticky-panel">
-              <div className="mb-3">
-                <h2>Notifications</h2>
-                <p className="text-secondary mb-0">Recent activity across your workflow.</p>
-              </div>
-              <div className="d-grid gap-2">
-                {notifications.length === 0 ? <p className="text-secondary mb-0">No notifications yet.</p> : null}
-                {notifications.slice(0, 8).map((item) => (
-                  <button key={item.id} className={`notification-item ${item.isRead ? "read" : "unread"}`} onClick={() => onMarkRead(item.id)} type="button">
-                    <strong>{item.title}</strong>
-                    <span>{item.message}</span>
-                    <div className="notification-meta">
-                      <span className="channel-chip">Email {item.emailStatus}</span>
-                      <span className="channel-chip">SMS {item.smsStatus}</span>
-                    </div>
-                    <small className="tiny-text">{formatDateTime(item.createdAt)}</small>
-                  </button>
-                ))}
-              </div>
-            </section>
-          </div>
+          <div className={showNotificationsPanel ? "col-12 col-xxl-9" : "col-12"}>{children}</div>
+          {showNotificationsPanel ? (
+            <div className="col-12 col-xxl-3">
+              <section className="section-card sticky-panel">
+                <div className="mb-3">
+                  <h2>Notifications</h2>
+                  <p className="text-secondary mb-0">Recent activity across your workflow.</p>
+                </div>
+                <div className="notification-list">
+                  {notifications.length === 0 ? <p className="text-secondary mb-0">No notifications yet.</p> : null}
+                  {notifications.slice(0, 8).map((item) => (
+                    <button key={item.id} className={`notification-item ${item.isRead ? "read" : "unread"}`} onClick={() => onMarkRead(item.id)} type="button">
+                      <strong>{item.title}</strong>
+                      <span>{item.message}</span>
+                      <div className="notification-meta">
+                        <span className="channel-chip">Email {item.emailStatus}</span>
+                        <span className="channel-chip">SMS {item.smsStatus}</span>
+                      </div>
+                      <small className="tiny-text">{formatDateTime(item.createdAt)}</small>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </div>
+          ) : null}
         </div>
       </main>
     </div>
@@ -113,6 +115,49 @@ export function SectionCard({ title, description, actions, children }) {
       </div>
       {children}
     </section>
+  );
+}
+
+export function AdminWorkspaceTabs({ activeView, onChange, unreadNotifications }) {
+  const tabs = [
+    { id: "assignment", label: "Smart Assignment Desk" },
+    { id: "officers", label: "Officer Management" },
+    { id: "notifications", label: `Notifications${unreadNotifications ? ` (${unreadNotifications})` : ""}` },
+    { id: "analytics", label: "Analytics" }
+  ];
+
+  return (
+    <div className="admin-tab-row">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          type="button"
+          className={`admin-tab-button ${activeView === tab.id ? "active" : ""}`}
+          onClick={() => onChange(tab.id)}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function NotificationFeed({ notifications, onMarkRead }) {
+  return (
+    <div className="notification-list notification-list-inline">
+      {notifications.length === 0 ? <p className="text-secondary mb-0">No notifications yet.</p> : null}
+      {notifications.map((item) => (
+        <button key={item.id} className={`notification-item ${item.isRead ? "read" : "unread"}`} onClick={() => onMarkRead(item.id)} type="button">
+          <strong>{item.title}</strong>
+          <span>{item.message}</span>
+          <div className="notification-meta">
+            <span className="channel-chip">Email {item.emailStatus}</span>
+            <span className="channel-chip">SMS {item.smsStatus}</span>
+          </div>
+          <small className="tiny-text">{formatDateTime(item.createdAt)}</small>
+        </button>
+      ))}
+    </div>
   );
 }
 

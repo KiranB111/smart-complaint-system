@@ -267,6 +267,20 @@ Frontend endpoint:
 
 - Application: `http://localhost:3000`
 
+### Frontend Environment
+
+Create `frontend/.env` for local development if you want to override the backend URL:
+
+```properties
+VITE_API_BASE_URL=http://localhost:8080/api
+```
+
+For production hosting, set `VITE_API_BASE_URL` to your deployed backend URL, for example:
+
+```properties
+VITE_API_BASE_URL=https://people-voice-backend.onrender.com/api
+```
+
 ## Application Properties
 
 The backend uses environment-variable based database configuration:
@@ -293,6 +307,72 @@ app.notifications.sms.from=${SMS_FROM:PEOPLEVOICE}
 ```
 
 When these are configured, People Voice will send notification payloads to your email and SMS provider webhooks and store the resulting delivery status as `SENT`, `SKIPPED`, or `FAILED`.
+
+## Deployment
+
+### Recommended Hosting
+
+- Frontend: Vercel
+- Backend: Render
+- Database: MySQL on Railway, Aiven, PlanetScale, or another managed provider
+
+### Backend Deployment
+
+Deploy the `backend` folder as a Spring Boot service.
+
+Required environment variables:
+
+```properties
+DB_URL=jdbc:mysql://your-host:3306/peoplevoice?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Kolkata
+DB_USERNAME=your_db_username
+DB_PASSWORD=your_db_password
+```
+
+Recommended optional environment variables:
+
+```properties
+EMAIL_NOTIFICATIONS_ENABLED=false
+SMS_NOTIFICATIONS_ENABLED=false
+EMAIL_WEBHOOK_URL=
+EMAIL_WEBHOOK_TOKEN=
+SMS_WEBHOOK_URL=
+SMS_WEBHOOK_TOKEN=
+```
+
+On Render, a typical setup is:
+
+- Root directory: `backend`
+- Build command: `mvn clean install`
+- Start command: `mvn spring-boot:run`
+
+If you prefer a jar launch in production:
+
+- Build command: `mvn clean package`
+- Start command: `java -jar target/smart-citizen-governance-backend-0.0.1-SNAPSHOT.jar`
+
+### Frontend Deployment
+
+Deploy the `frontend` folder as a Vite static app.
+
+Set:
+
+```properties
+VITE_API_BASE_URL=https://your-backend-domain/api
+```
+
+Typical Vercel setup:
+
+- Root directory: `frontend`
+- Build command: `npm run build`
+- Output directory: `dist`
+
+### Deployment Checklist
+
+1. Deploy MySQL database
+2. Deploy backend with `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD`
+3. Confirm backend health and API access
+4. Deploy frontend with `VITE_API_BASE_URL`
+5. Open the app and test login, complaint creation, assignment, and realtime updates
 
 ## API Overview
 

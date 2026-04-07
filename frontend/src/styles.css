@@ -68,6 +68,33 @@ body {
   align-items: start;
 }
 
+.admin-tab-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.admin-tab-button {
+  padding: 0.85rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(21, 34, 56, 0.12);
+  background: rgba(21, 34, 56, 0.04);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.admin-tab-button.active {
+  background: linear-gradient(135deg, #152238, #36506e);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 12px 24px rgba(21, 34, 56, 0.16);
+}
+
+.workspace-title {
+  margin-bottom: 0.35rem;
+  font-weight: 800;
+}
+
 .stat-card {
   padding: 1.4rem;
 }
@@ -186,6 +213,20 @@ body {
 .sticky-panel {
   position: sticky;
   top: 1rem;
+}
+
+.notification-list {
+  display: grid;
+  gap: 0.75rem;
+  max-height: calc(100vh - 10rem);
+  overflow: auto;
+  padding-right: 0.15rem;
+}
+
+.notification-list-inline {
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
 }
 
 .notification-item {
@@ -334,5 +375,16 @@ body {
 
   .sticky-panel {
     position: static;
+  }
+}
+
+@media (max-width: 1399.98px) {
+  .sticky-panel {
+    position: static;
+  }
+
+  .notification-list {
+    max-height: none;
+    overflow: visible;
   }
 }

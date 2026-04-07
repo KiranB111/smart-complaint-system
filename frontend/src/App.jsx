@@ -1,8 +1,9 @@
 import { Link, Navigate, Route, Routes } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
-import { analyticsApi, authApi, complaintApi, notificationApi, userApi } from "./api";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { analyticsApi, authApi, complaintApi, notificationApi, realtimeStreamUrl, userApi } from "./api";
 import {
   AnalyticsBarChart,
+  AdminWorkspaceTabs,
   AppLayout,
   AttachmentGallery,
   AuthCard,
@@ -10,6 +11,7 @@ import {
   ComplaintTable,
   DashboardCards,
   HeroPanel,
+  NotificationFeed,
   OfficerLeaderboard,
   OfficerAvailabilityList,
   OfficerAvailabilityPanel,
@@ -141,6 +143,8 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
   const [officerForm, setOfficerForm] = useState(emptyOfficer);
   const [message, setMessage] = useState("");
   const [resolutionDialog, setResolutionDialog] = useState({ open: false, complaintId: null, rating: 5 });
+  const [adminView, setAdminView] = useState("assignment");
+  const adminWorkspaceRef = useRef(null);
 
   const loadComplaints = async () => {
     const { data } = await complaintApi.list();
@@ -178,7 +182,7 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
     loadNotifications();
     const token = localStorage.getItem("pv_access_token");
     const eventSource = token
-      ? new EventSource(`http://localhost:8080/api/stream?access_token=${encodeURIComponent(token)}`)
+      ? new EventSource(`${realtimeStreamUrl()}?access_token=${encodeURIComponent(token)}`)
       : null;
 
     const handleRealtimeRefresh = () => {
@@ -359,8 +363,24 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
     ? complaints.filter((item) => item.assignedOfficerId === user.id)
     : complaints;
 
+  const unreadNotifications = useMemo(
+    () => notifications.filter((item) => !item.isRead).length,
+    [notifications]
+  );
+
+  useEffect(() => {
+    if (user.role !== "ADMIN") return;
+    adminWorkspaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [adminView, user.role]);
+
   return (
-    <AppLayout user={user} onLogout={onLogout} notifications={notifications} onMarkRead={markNotificationRead}>
+    <AppLayout
+      user={user}
+      onLogout={onLogout}
+      notifications={notifications}
+      onMarkRead={markNotificationRead}
+      showNotificationsPanel={user.role !== "ADMIN"}
+    >
       <ResolutionModal
         open={resolutionDialog.open}
         rating={resolutionDialog.rating}
@@ -368,10 +388,10 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
         onConfirm={submitResolutionRating}
         onCancel={closeResolutionDialog}
       />
-      <DashboardCards items={complaintCards} />
+      {user.role !== "ADMIN" ? <DashboardCards items={complaintCards} /> : null}
 
       <div className="row g-4">
-        <div className="col-12">
+        <div className="col-12" ref={adminWorkspaceRef}>
           {user.role === "CITIZEN" ? (
             <SectionCard title="Raise a complaint" description="Upload exact images of the issue, submit the complaint, and track each step until resolution.">
               {message ? <div className="alert alert-success py-2">{message}</div> : null}
@@ -380,76 +400,128 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
           ) : null}
 
           {user.role === "ADMIN" ? (
-            <div className="row g-4">
-              <div className="col-lg-8">
-                <SectionCard title="Smart assignment desk" description="Assign work manually or use auto-assignment to route complaints to the best available officer by workload and rating.">
-                  <ComplaintTable
-                    complaints={complaintList}
-                    user={user}
-                    officers={officers}
-                    assignmentState={assignmentState}
-                    onAssignmentChange={(complaintId, officerId) => setAssignmentState((current) => ({ ...current, [complaintId]: officerId }))}
-                    onAssign={assignComplaint}
-                    onAutoAssign={autoAssignComplaint}
-                    onOfficerUpdate={updateComplaint}
-                    onCitizenConfirm={confirmComplaint}
-                    onSelectComplaint={setSelectedComplaint}
-                  />
-                </SectionCard>
-              </div>
-              <div className="col-lg-4 d-grid gap-4">
-                <SectionCard title="Officer management" description="Create officers and monitor availability and ratings.">
-                  <OfficerCreateForm form={officerForm} setForm={setOfficerForm} onSubmit={createOfficer} />
-                  <hr />
-                  <OfficerManagementList
-                    officers={officers}
-                    onChange={changeOfficerDraft}
-                    onSave={saveOfficer}
-                    onToggleActive={toggleOfficerActive}
-                  />
-                </SectionCard>
-                <SectionCard title="Analytics and exports" description="Generate reports and monitor service performance.">
-                  {analytics ? (
-                    <>
-                      <div className="analytics-stack">
-                        <div className="metric-block">
-                          <span>Average Resolution Hours</span>
-                          <strong>{analytics.averageResolutionHours.toFixed(1)}</strong>
+            <SectionCard
+              title="Admin workspace"
+              description="Use the buttons below to switch the current admin panel in place."
+            >
+              <AdminWorkspaceTabs activeView={adminView} onChange={setAdminView} unreadNotifications={unreadNotifications} />
+
+              <div className="mt-4">
+                {adminView === "assignment" ? (
+                  <div className="d-grid gap-4">
+                    <div>
+                      <h3 className="workspace-title">Smart assignment desk</h3>
+                      <p className="text-secondary">Assign work manually or use auto-assignment to route complaints to the best available officer by workload and rating.</p>
+                      <ComplaintTable
+                        complaints={complaintList}
+                        user={user}
+                        officers={officers}
+                        assignmentState={assignmentState}
+                        onAssignmentChange={(complaintId, officerId) => setAssignmentState((current) => ({ ...current, [complaintId]: officerId }))}
+                        onAssign={assignComplaint}
+                        onAutoAssign={autoAssignComplaint}
+                        onOfficerUpdate={updateComplaint}
+                        onCitizenConfirm={confirmComplaint}
+                        onSelectComplaint={setSelectedComplaint}
+                      />
+                    </div>
+                    <div>
+                      <h3 className="workspace-title">Complaint detail</h3>
+                      <p className="text-secondary">Open any complaint to review evidence and the full status timeline.</p>
+                      {selectedComplaint ? (
+                        <div className="row g-4">
+                          <div className="col-lg-5">
+                            <h5>Attachments</h5>
+                            <AttachmentGallery attachments={selectedComplaint.attachments} />
+                            <hr />
+                            <h5 className="mb-2">Officer availability snapshot</h5>
+                            <OfficerAvailabilityList officers={officers} />
+                          </div>
+                          <div className="col-lg-7">
+                            <h5>Timeline</h5>
+                            <TimelineList timeline={selectedComplaint.timeline} />
+                          </div>
                         </div>
-                        <div className="metric-block">
-                          <span>Complaint Throughput</span>
-                          <strong>{analytics.totalComplaints}</strong>
-                          <small>{analytics.openComplaints} open | {analytics.inProgressComplaints} in progress | {analytics.resolvedComplaints} resolved</small>
-                        </div>
-                      </div>
-                      <div className="row g-3 mt-1">
-                        <div className="col-12">
-                          <AnalyticsBarChart title="Status Mix" items={chartData.status} colorClass="teal" />
-                        </div>
-                        <div className="col-12">
-                          <AnalyticsBarChart title="Category Demand" items={chartData.category} colorClass="gold" />
-                        </div>
-                        <div className="col-12">
-                          <AnalyticsBarChart title="Priority Spread" items={chartData.priority} colorClass="coral" />
-                        </div>
-                        <div className="col-12">
+                      ) : <p className="text-secondary mb-0">Select a complaint to inspect attachments and timeline.</p>}
+                    </div>
+                  </div>
+                ) : null}
+
+                {adminView === "officers" ? (
+                  <div className="d-grid gap-3">
+                    <div>
+                      <h3 className="workspace-title">Officer management</h3>
+                      <p className="text-secondary">Create officers and monitor availability and ratings.</p>
+                    </div>
+                    <OfficerCreateForm form={officerForm} setForm={setOfficerForm} onSubmit={createOfficer} />
+                    <hr />
+                    <OfficerManagementList
+                      officers={officers}
+                      onChange={changeOfficerDraft}
+                      onSave={saveOfficer}
+                      onToggleActive={toggleOfficerActive}
+                    />
+                  </div>
+                ) : null}
+
+                {adminView === "analytics" ? (
+                  <div className="d-grid gap-3">
+                    <div>
+                      <h3 className="workspace-title">Analytics and exports</h3>
+                      <p className="text-secondary">Generate reports and monitor service performance.</p>
+                    </div>
+                    {analytics ? (
+                      <>
+                        <div className="analytics-stack">
                           <div className="metric-block">
-                            <span>Officer Performance Board</span>
-                            <div className="mt-2">
-                              <OfficerLeaderboard officers={officers} />
+                            <span>Average Resolution Hours</span>
+                            <strong>{analytics.averageResolutionHours.toFixed(1)}</strong>
+                          </div>
+                          <div className="metric-block">
+                            <span>Complaint Throughput</span>
+                            <strong>{analytics.totalComplaints}</strong>
+                            <small>{analytics.openComplaints} open | {analytics.inProgressComplaints} in progress | {analytics.resolvedComplaints} resolved</small>
+                          </div>
+                        </div>
+                        <div className="row g-3">
+                          <div className="col-12">
+                            <AnalyticsBarChart title="Status Mix" items={chartData.status} colorClass="teal" />
+                          </div>
+                          <div className="col-12">
+                            <AnalyticsBarChart title="Category Demand" items={chartData.category} colorClass="gold" />
+                          </div>
+                          <div className="col-12">
+                            <AnalyticsBarChart title="Priority Spread" items={chartData.priority} colorClass="coral" />
+                          </div>
+                          <div className="col-12">
+                            <div className="metric-block">
+                              <span>Officer Performance Board</span>
+                              <div className="mt-2">
+                                <OfficerLeaderboard officers={officers} />
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="d-flex gap-2 mt-3">
-                        <button className="btn btn-dark" onClick={() => exportFile("pdf")}>Export PDF</button>
-                        <button className="btn btn-outline-dark" onClick={() => exportFile("excel")}>Export Excel</button>
-                      </div>
-                    </>
-                  ) : <p className="text-muted mb-0">Loading analytics...</p>}
-                </SectionCard>
+                        <div className="d-flex gap-2 mt-2">
+                          <button className="btn btn-dark" onClick={() => exportFile("pdf")}>Export PDF</button>
+                          <button className="btn btn-outline-dark" onClick={() => exportFile("excel")}>Export Excel</button>
+                        </div>
+                      </>
+                    ) : <p className="text-muted mb-0">Loading analytics...</p>}
+                  </div>
+                ) : null}
+
+                {adminView === "notifications" ? (
+                  <div className="d-grid gap-3">
+                    <div>
+                      <h3 className="workspace-title">Notifications</h3>
+                      <p className="text-secondary">Review admin alerts and mark them as read when handled.</p>
+                    </div>
+                    <NotificationFeed notifications={notifications} onMarkRead={markNotificationRead} />
+                  </div>
+                ) : null}
               </div>
-            </div>
+            </SectionCard>
           ) : null}
 
           {user.role === "OFFICER" ? (
@@ -502,29 +574,24 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
           ) : null}
         </div>
 
-        <div className="col-12">
-          <SectionCard title="Complaint detail" description="Open any complaint to review evidence and the full status timeline.">
-            {selectedComplaint ? (
-              <div className="row g-4">
-                <div className="col-lg-5">
-                  <h5>Attachments</h5>
-                  <AttachmentGallery attachments={selectedComplaint.attachments} />
-                  {user.role === "ADMIN" ? (
-                    <>
-                      <hr />
-                      <h5 className="mb-2">Officer availability snapshot</h5>
-                      <OfficerAvailabilityList officers={officers} />
-                    </>
-                  ) : null}
+        {user.role !== "ADMIN" ? (
+          <div className="col-12">
+            <SectionCard title="Complaint detail" description="Open any complaint to review evidence and the full status timeline.">
+              {selectedComplaint ? (
+                <div className="row g-4">
+                  <div className="col-lg-5">
+                    <h5>Attachments</h5>
+                    <AttachmentGallery attachments={selectedComplaint.attachments} />
+                  </div>
+                  <div className="col-lg-7">
+                    <h5>Timeline</h5>
+                    <TimelineList timeline={selectedComplaint.timeline} />
+                  </div>
                 </div>
-                <div className="col-lg-7">
-                  <h5>Timeline</h5>
-                  <TimelineList timeline={selectedComplaint.timeline} />
-                </div>
-              </div>
-            ) : <p className="text-secondary mb-0">Select a complaint to inspect attachments and timeline.</p>}
-          </SectionCard>
-        </div>
+              ) : <p className="text-secondary mb-0">Select a complaint to inspect attachments and timeline.</p>}
+            </SectionCard>
+          </div>
+        ) : null}
       </div>
     </AppLayout>
   );
