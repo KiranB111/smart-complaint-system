@@ -1,26 +1,28 @@
 # People Voice
 
-People Voice is a full-stack smart citizen governance platform built to improve how public grievances are reported, prioritized, tracked, and resolved. It gives citizens a simple complaint portal, provides officers and administrators with role-based dashboards, and introduces intelligent complaint prioritization using locality density signals to support faster decision-making.
+People Voice is a full-stack smart citizen governance platform for reporting, assigning, tracking, and resolving public grievances. Citizens can create their own accounts and raise complaints, admins can assign work to officers based on availability, officers can update complaint progress, and citizens provide the final confirmation when local work is completed.
 
-This project is structured as a portfolio-ready civic tech application that showcases secure authentication, backend service design, responsive frontend workflows, analytics reporting, and complete end-to-end product thinking.
+This project is designed as a portfolio-ready civic tech system that demonstrates secure authentication, role-based workflows, backend business logic, responsive dashboard design, analytics, and officer performance feedback.
 
 ## Highlights
 
 - Full-stack architecture with Spring Boot backend and React frontend
 - JWT-based authentication with role-based access control
-- Citizen complaint filing and status tracking
-- Officer and admin dashboards for grievance operations
-- Smart prioritization using locality density and complaint category
-- PDF and Excel report export for analytics workflows
-- Demo-ready seeded users for quick evaluation
+- Citizen self-registration and complaint submission
+- Admin assignment workflow based on officer availability
+- Officer progress updates and locality work handling
+- Citizen-side final resolution confirmation
+- Officer ratings based on completed work
+- Analytics reporting with PDF and Excel export
 
 ## Problem Statement
 
-Public grievance systems are often difficult to track, slow to respond, and disconnected from operational priorities. People Voice addresses this by creating a transparent workflow where:
+Public grievance systems often make it difficult for citizens to know who is handling their issue and whether local work has actually been completed. People Voice improves that process by giving:
 
-- Citizens can submit and monitor complaints
-- Officers receive a prioritized queue of issues
-- Administrators can review performance and complaint trends
+- Citizens a direct way to register, raise complaints, and confirm final resolution
+- Admins a structured assignment dashboard to distribute work across officers
+- Officers a focused operational queue with availability-based routing
+- Governance teams better visibility into progress, workload, and officer performance
 
 ## Tech Stack
 
@@ -31,8 +33,7 @@ Public grievance systems are often difficult to track, slow to respond, and disc
 - Spring Security
 - JWT Authentication
 - Spring Data JPA
-- H2 for local development
-- MySQL / PostgreSQL compatible configuration
+- MySQL
 - Apache POI for Excel export
 - OpenPDF for PDF generation
 
@@ -46,49 +47,73 @@ Public grievance systems are often difficult to track, slow to respond, and disc
 
 **Database**
 
-- H2 for demo mode
-- SQL schema included for relational database setup
+- MySQL as the primary runtime database
+- SQL schema included for relational setup reference
+
+## Core Workflow
+
+### Citizen Flow
+
+- Register a new citizen account
+- Log in and submit a complaint
+- Track complaint assignment and progress
+- Confirm whether locality work is actually resolved
+- Rate the officer after successful completion
+
+### Admin Flow
+
+- View all complaints in the assignment desk
+- Monitor officer availability
+- Assign complaints only to available officers
+- Track analytics and export operational reports
+
+### Officer Flow
+
+- Update personal availability as `AVAILABLE`, `BUSY`, or `OFFLINE`
+- Work only on assigned complaints
+- Move complaints to `IN_PROGRESS`
+- Mark work as complete and send it for citizen confirmation
 
 ## Features
 
-### Citizen Portal
+### Complaint Lifecycle
 
-- Secure registration and login
-- Complaint submission with title, category, description, and location
-- Complaint status tracking
-- Visibility into assigned priority and officer routing
+- `OPEN` when a citizen submits a complaint
+- `ASSIGNED` when the admin assigns it to an officer
+- `IN_PROGRESS` while the officer is working
+- `PENDING_CITIZEN_CONFIRMATION` when field work is completed
+- `RESOLVED` only after the citizen confirms completion
 
-### Officer and Admin Workflow
+### Smart Prioritization
 
-- Role-based access to grievance queues
-- Update complaint status to `IN_PROGRESS` or `RESOLVED`
-- Review operational workload and progress
-- Export reports in PDF and Excel formats
+Complaints are auto-prioritized using locality-density heuristics and category importance. Issues from dense localities or essential categories such as sanitation and water can be escalated in urgency.
 
-### Intelligent Prioritization
+### Officer Rating System
 
-Complaints are auto-prioritized using locality density heuristics and category importance. Issues in high-density areas or essential public-service categories can be escalated to higher urgency.
+After confirming a complaint is resolved, the citizen can rate the officer from 1 to 5. Ratings are aggregated and shown in the admin officer panel as average score and total count.
 
 ## Screenshots
 
-Add screenshots to a `screenshots/` folder and reference them here to make the project feel more tangible for reviewers.
+Add screenshots to the `screenshots/` folder and reference them here for a stronger portfolio presentation.
 
 Suggested captures:
 
 - Login page
+- Citizen registration page
 - Citizen complaint dashboard
-- Complaint submission form
-- Officer or admin operations dashboard
-- Analytics and export section
+- Admin assignment dashboard
+- Officer workflow dashboard
+- Analytics and officer ratings panel
 
 Example structure:
 
 ```text
 screenshots/
 |-- login.png
+|-- register.png
 |-- citizen-dashboard.png
-|-- complaint-form.png
 |-- admin-dashboard.png
+|-- officer-dashboard.png
 `-- analytics.png
 ```
 
@@ -104,18 +129,21 @@ Example Markdown once images are added:
 
 ```mermaid
 flowchart LR
-    A["Citizen / Officer / Admin"] --> B["React Frontend<br/>Vite + React Router + Axios"]
+    A["Citizen"] --> B["React Frontend"]
+    X["Officer"] --> B
+    Y["Admin"] --> B
     B --> C["Spring Boot REST API"]
     C --> D["Spring Security + JWT"]
-    C --> E["Service Layer"]
-    E --> F["Complaint Prioritization Engine"]
-    E --> G["Analytics & Export Module"]
-    E --> H["JPA Repository Layer"]
-    H --> I["H2 / MySQL / PostgreSQL"]
-    G --> J["PDF / Excel Reports"]
+    C --> E["Complaint Workflow Service"]
+    E --> F["Availability-based Assignment"]
+    E --> G["Citizen Resolution Confirmation"]
+    E --> H["Officer Rating Aggregation"]
+    E --> I["Analytics + Export Module"]
+    C --> J["JPA Repository Layer"]
+    J --> K["MySQL"]
 ```
 
-The architecture is intentionally layered so the project is easy to maintain and extend. The frontend handles user flows and dashboard views, the backend enforces authentication and business rules, and the data layer persists complaints, users, and analytics-ready records.
+The architecture is layered so the UI focuses on role-based user flows, the backend owns workflow and assignment rules, and the database persists complaints, users, officer ratings, and analytics-ready records.
 
 ## Project Structure
 
@@ -124,16 +152,19 @@ smart-complaint-system/
 |-- backend/          Spring Boot REST API
 |-- frontend/         React + Vite web client
 |-- database/         SQL schema
+|-- screenshots/      Project screenshots
 |-- LICENSE
 `-- README.md
 ```
 
 ## Demo Accounts
 
-Use these accounts after starting the backend:
+Use these seeded demo accounts after starting the backend:
 
 - Citizen: `citizen@peoplevoice.local` / `password`
-- Officer: `officer@peoplevoice.local` / `password`
+- Officer 1: `officer@peoplevoice.local` / `password`
+- Officer 2: `officer2@peoplevoice.local` / `password`
+- Officer 3: `officer3@peoplevoice.local` / `password`
 - Admin: `admin@peoplevoice.local` / `password`
 
 ## Getting Started
@@ -144,6 +175,25 @@ Use these accounts after starting the backend:
 - Maven
 - Node.js 18 or later recommended
 - npm
+- MySQL server
+
+### Environment Variables
+
+For local development, set your MySQL credentials before running the backend.
+
+**PowerShell**
+
+```powershell
+$env:DB_USERNAME="root"
+$env:DB_PASSWORD="your_mysql_password"
+```
+
+**Git Bash**
+
+```bash
+export DB_USERNAME=root
+export DB_PASSWORD=your_mysql_password
+```
 
 ### Run the Backend
 
@@ -153,10 +203,9 @@ mvn clean install
 mvn spring-boot:run
 ```
 
-Backend endpoints:
+Backend endpoint:
 
 - API base URL: `http://localhost:8080/api`
-- H2 console: `http://localhost:8080/h2-console`
 
 ### Run the Frontend
 
@@ -166,9 +215,21 @@ npm install
 npm run dev
 ```
 
-Frontend URL:
+Frontend endpoint:
 
 - Application: `http://localhost:3000`
+
+## Application Properties
+
+The backend uses environment-variable based database configuration:
+
+```properties
+spring.datasource.url=${DB_URL:jdbc:mysql://localhost:3306/peoplevoice?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Kolkata}
+spring.datasource.username=${DB_USERNAME:root}
+spring.datasource.password=${DB_PASSWORD:}
+```
+
+This keeps credentials out of source control while still allowing local defaults where appropriate.
 
 ## API Overview
 
@@ -184,7 +245,15 @@ Frontend URL:
 - `POST /api/complaints`
 - `GET /api/complaints/{id}`
 - `PUT /api/complaints/{id}`
+- `PUT /api/complaints/{id}/assign`
+- `PUT /api/complaints/{id}/citizen-confirmation`
 - `DELETE /api/complaints/{id}`
+
+### Users and Officer Availability
+
+- `GET /api/users/me`
+- `GET /api/users/officers`
+- `PUT /api/users/me/availability`
 
 ### Analytics
 
@@ -194,32 +263,36 @@ Frontend URL:
 
 ## Architecture Notes
 
-- The backend is organized with controller, service, repository, DTO, model, and security layers.
-- Spring Security and JWT are used to enforce role-based access.
-- The frontend delivers separate user experiences for citizens and operational users.
-- Complaint data is periodically refreshed on the frontend for lightweight real-time visibility.
+- The backend is organized into controller, service, repository, DTO, model, and security layers.
+- Registration is citizen-first by default.
+- Officer assignment is availability-aware and admin-controlled.
+- Complaint resolution is not final until the citizen confirms it.
+- Officer ratings are derived from completed complaint confirmations.
+- The frontend provides separate role-based experiences for citizens, admins, and officers.
 
 ## Why This Project Works Well in a Portfolio
 
 People Voice demonstrates more than basic CRUD. It combines:
 
-- authentication and authorization
-- structured backend layering
-- real-world workflow logic
-- export/reporting capabilities
-- role-sensitive dashboards
+- secure authentication and authorization
+- multi-role workflow design
+- availability-based operational assignment
+- citizen-driven final resolution logic
+- officer feedback and rating aggregation
+- export/reporting functionality
 - a practical civic technology use case
 
-It is a strong showcase project for full-stack Java and React development, especially for illustrating secure REST API design and product-oriented dashboard implementation.
+It is a strong showcase project for full-stack Java and React development, especially for illustrating secure REST API design, workflow modeling, and dashboard-oriented product implementation.
 
 ## Future Improvements
 
-- Replace heuristics with live GIS or population-density APIs
-- Add image or document uploads for complaint evidence
-- Add email or SMS notifications
-- Introduce WebSocket-based live status updates
-- Expand analytics with charts and trend visualizations
-- Deploy the stack to a public cloud environment
+- Add complaint image and document uploads
+- Add live notifications by email or SMS
+- Introduce WebSocket-based real-time updates
+- Add complaint history timeline and audit logs
+- Add charts for analytics and officer performance
+- Add admin-managed staff creation instead of relying on seeded demo users
+- Deploy backend and frontend to a public cloud environment
 
 ## License
 
