@@ -87,6 +87,7 @@ public class DataSeeder implements CommandLineRunner {
         }
         user.setPhone(phone);
         user.setRole(role);
+        user.setActive(true);
         user.setAvailability(availability);
         userRepository.save(user);
     }
