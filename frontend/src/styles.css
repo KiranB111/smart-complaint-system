@@ -94,10 +94,93 @@ body {
   gap: 0.5rem;
 }
 
+.chart-stack {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.chart-row {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.chart-label-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.chart-track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(21, 34, 56, 0.08);
+  overflow: hidden;
+}
+
+.chart-fill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.chart-fill.teal {
+  background: linear-gradient(90deg, #0f766e, #22c55e);
+}
+
+.chart-fill.gold {
+  background: linear-gradient(90deg, #f59e0b, #facc15);
+}
+
+.chart-fill.coral {
+  background: linear-gradient(90deg, #f97316, #ef4444);
+}
+
 .metric-block {
   padding: 1rem;
   border-radius: 20px;
   background: rgba(21, 34, 56, 0.05);
+}
+
+.leaderboard-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.leaderboard-item {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 0.9rem;
+  align-items: center;
+  padding: 0.85rem 0.95rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--soft-border);
+}
+
+.leaderboard-rank {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  background: linear-gradient(135deg, #152238, #36506e);
+  color: white;
+}
+
+.leaderboard-meta {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.leaderboard-meta span,
+.leaderboard-score small {
+  color: #51607b;
+}
+
+.leaderboard-score {
+  display: grid;
+  justify-items: end;
 }
 
 .sticky-panel {

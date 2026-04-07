@@ -6,7 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record AppProperties(
         Jwt jwt,
         Density density,
-        Storage storage
+        Storage storage,
+        Notifications notifications
 ) {
     public record Jwt(String secret, long expirationMs, long refreshExpirationMs) {
     }
@@ -15,5 +16,11 @@ public record AppProperties(
     }
 
     public record Storage(String uploadDir) {
+    }
+
+    public record Notifications(Channel email, Channel sms) {
+    }
+
+    public record Channel(boolean enabled, String webhookUrl, String authToken, String from) {
     }
 }

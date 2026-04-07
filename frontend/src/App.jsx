@@ -2,6 +2,7 @@ import { Link, Navigate, Route, Routes } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { analyticsApi, authApi, complaintApi, notificationApi, userApi } from "./api";
 import {
+  AnalyticsBarChart,
   AppLayout,
   AttachmentGallery,
   AuthCard,
@@ -9,6 +10,7 @@ import {
   ComplaintTable,
   DashboardCards,
   HeroPanel,
+  OfficerLeaderboard,
   OfficerAvailabilityList,
   OfficerAvailabilityPanel,
   OfficerCreateForm,
@@ -174,11 +176,39 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
     loadAnalytics();
     loadOfficers();
     loadNotifications();
+    const token = localStorage.getItem("pv_access_token");
+    const eventSource = token
+      ? new EventSource(`http://localhost:8080/api/stream?access_token=${encodeURIComponent(token)}`)
+      : null;
+
+    const handleRealtimeRefresh = () => {
+      loadComplaints();
+      loadNotifications();
+      if (user.role !== "CITIZEN") {
+        loadAnalytics();
+      }
+      if (user.role === "ADMIN") {
+        loadOfficers();
+      }
+    };
+
+    eventSource?.addEventListener("complaint", handleRealtimeRefresh);
+    eventSource?.addEventListener("notification", handleRealtimeRefresh);
+
     const timer = setInterval(() => {
       loadComplaints();
       loadNotifications();
-    }, 12000);
-    return () => clearInterval(timer);
+      if (user.role !== "CITIZEN") {
+        loadAnalytics();
+      }
+      if (user.role === "ADMIN") {
+        loadOfficers();
+      }
+    }, 30000);
+    return () => {
+      clearInterval(timer);
+      eventSource?.close();
+    };
   }, [user.role]);
 
   const complaintCards = useMemo(() => {
@@ -194,6 +224,12 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
       { label: "Resolved", value: resolved, helper: `${inProgress} active` }
     ];
   }, [complaints]);
+
+  const chartData = useMemo(() => ({
+    status: analytics?.complaintsByStatus || [],
+    category: analytics?.complaintsByCategory || [],
+    priority: analytics?.complaintsByPriority || []
+  }), [analytics]);
 
   const submitComplaint = async (event) => {
     event.preventDefault();
@@ -381,8 +417,28 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
                           <strong>{analytics.averageResolutionHours.toFixed(1)}</strong>
                         </div>
                         <div className="metric-block">
-                          <span>Status Mix</span>
-                          {analytics.complaintsByStatus.map((item) => <small key={item.label}>{item.label}: {item.count}</small>)}
+                          <span>Complaint Throughput</span>
+                          <strong>{analytics.totalComplaints}</strong>
+                          <small>{analytics.openComplaints} open | {analytics.inProgressComplaints} in progress | {analytics.resolvedComplaints} resolved</small>
+                        </div>
+                      </div>
+                      <div className="row g-3 mt-1">
+                        <div className="col-12">
+                          <AnalyticsBarChart title="Status Mix" items={chartData.status} colorClass="teal" />
+                        </div>
+                        <div className="col-12">
+                          <AnalyticsBarChart title="Category Demand" items={chartData.category} colorClass="gold" />
+                        </div>
+                        <div className="col-12">
+                          <AnalyticsBarChart title="Priority Spread" items={chartData.priority} colorClass="coral" />
+                        </div>
+                        <div className="col-12">
+                          <div className="metric-block">
+                            <span>Officer Performance Board</span>
+                            <div className="mt-2">
+                              <OfficerLeaderboard officers={officers} />
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <div className="d-flex gap-2 mt-3">

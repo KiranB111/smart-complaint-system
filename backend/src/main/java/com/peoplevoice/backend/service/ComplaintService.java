@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +33,7 @@ public class ComplaintService {
     private final AttachmentService attachmentService;
     private final TimelineService timelineService;
     private final NotificationService notificationService;
+    private final RealtimeEventService realtimeEventService;
 
     public List<ComplaintResponse> findAll(String status, String category) {
         return complaintRepository.search(parseStatus(status), normalize(category)).stream().map(this::toResponse).toList();
@@ -76,6 +78,7 @@ public class ComplaintService {
         Complaint saved = complaintRepository.save(complaint);
         timelineService.record(saved, citizen.getName(), Role.CITIZEN, null, ComplaintStatus.OPEN.name(), "Complaint created by citizen");
         notificationService.notifyRole(Role.ADMIN, NotificationType.COMPLAINT_CREATED, "New complaint submitted", saved.getTitle() + " requires assignment");
+        publishComplaintUpdate(saved);
         return toResponse(saved);
     }
 
@@ -103,6 +106,7 @@ public class ComplaintService {
         timelineService.record(saved, admin.getName(), Role.ADMIN, previousStatus.name(), ComplaintStatus.ASSIGNED.name(), "Complaint assigned to " + officer.getName());
         notificationService.notifyUser(officer, NotificationType.COMPLAINT_ASSIGNED, "New complaint assigned", saved.getTitle() + " has been assigned to you");
         notificationService.notifyUser(saved.getCitizen(), NotificationType.STATUS_UPDATED, "Complaint assigned", saved.getTitle() + " is now assigned to " + officer.getName());
+        publishComplaintUpdate(saved);
         return toResponse(saved);
     }
 
@@ -172,6 +176,7 @@ public class ComplaintService {
         } else if (role == Role.OFFICER || role == Role.ADMIN) {
             notificationService.notifyUser(saved.getCitizen(), NotificationType.STATUS_UPDATED, "Complaint status updated", saved.getTitle() + " is now " + saved.getStatus().name());
         }
+        publishComplaintUpdate(saved);
         return toResponse(saved);
     }
 
@@ -201,6 +206,7 @@ public class ComplaintService {
 
         Complaint saved = complaintRepository.save(complaint);
         timelineService.record(saved, saved.getCitizen().getName(), Role.CITIZEN, previousStatus.name(), saved.getStatus().name(), Boolean.TRUE.equals(request.resolved()) ? "Citizen confirmed resolution" : "Citizen marked complaint as still pending");
+        publishComplaintUpdate(saved);
         return toResponse(saved);
     }
 
@@ -220,6 +226,7 @@ public class ComplaintService {
         attachmentService.store(complaint, file, role);
         timelineService.record(complaint, actor.getName(), role, complaint.getStatus().name(), complaint.getStatus().name(), "Uploaded " + attachmentType + ": " + file.getOriginalFilename());
         notificationService.notifyUser(complaint.getCitizen(), NotificationType.STATUS_UPDATED, "New complaint attachment", "A new " + attachmentType + " file was uploaded for " + complaint.getTitle());
+        publishComplaintUpdate(complaint);
         return toResponse(complaint);
     }
 
@@ -325,5 +332,17 @@ public class ComplaintService {
                 officerId,
                 List.of(ComplaintStatus.ASSIGNED, ComplaintStatus.IN_PROGRESS, ComplaintStatus.PENDING_CITIZEN_CONFIRMATION)
         );
+    }
+
+    private void publishComplaintUpdate(Complaint complaint) {
+        Map<String, Object> payload = Map.of(
+                "complaintId", complaint.getId(),
+                "status", complaint.getStatus().name()
+        );
+        realtimeEventService.publishToUser(complaint.getCitizen().getId(), "complaint", payload);
+        if (complaint.getAssignedOfficer() != null) {
+            realtimeEventService.publishToUser(complaint.getAssignedOfficer().getId(), "complaint", payload);
+        }
+        realtimeEventService.publishToRole(Role.ADMIN, "complaint", payload);
     }
 }

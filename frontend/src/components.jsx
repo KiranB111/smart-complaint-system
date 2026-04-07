@@ -218,6 +218,58 @@ export function OfficerAvailabilityList({ officers }) {
   );
 }
 
+export function AnalyticsBarChart({ title, items, colorClass = "teal" }) {
+  const max = Math.max(...items.map((item) => Number(item.count) || 0), 1);
+  return (
+    <div className="metric-block">
+      <span>{title}</span>
+      <div className="chart-stack mt-2">
+        {items.map((item) => {
+          const count = Number(item.count) || 0;
+          const width = `${Math.max((count / max) * 100, count ? 8 : 0)}%`;
+          return (
+            <div className="chart-row" key={item.label}>
+              <div className="chart-label-line">
+                <strong>{item.label}</strong>
+                <span>{count}</span>
+              </div>
+              <div className="chart-track">
+                <div className={`chart-fill ${colorClass}`} style={{ width }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export function OfficerLeaderboard({ officers }) {
+  const ranked = [...officers]
+    .filter((officer) => officer.active)
+    .sort((left, right) => (right.averageRating || 0) - (left.averageRating || 0) || (right.ratingCount || 0) - (left.ratingCount || 0));
+
+  if (!ranked.length) return <p className="text-secondary mb-0">No active officers available for ranking yet.</p>;
+
+  return (
+    <div className="leaderboard-list">
+      {ranked.map((officer, index) => (
+        <div className="leaderboard-item" key={officer.id}>
+          <div className="leaderboard-rank">{index + 1}</div>
+          <div className="leaderboard-meta">
+            <strong>{officer.name}</strong>
+            <span>{officer.availability} | {officer.email}</span>
+          </div>
+          <div className="leaderboard-score">
+            <strong>{(officer.averageRating || 0).toFixed(1)}</strong>
+            <small>{officer.ratingCount || 0} ratings</small>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function OfficerManagementList({ officers, onChange, onSave, onToggleActive }) {
   return (
     <div className="d-grid gap-3">
@@ -290,7 +342,7 @@ export function AttachmentGallery({ attachments }) {
         <a key={attachment.id} className="attachment-card" href={`http://localhost:8080${attachment.url}`} target="_blank" rel="noreferrer">
           <span>{attachment.fileName}</span>
           <small>{attachment.attachmentType.replaceAll("_", " ")}</small>
-          <small>{attachment.uploadedByRole} • {formatDateTime(attachment.createdAt)}</small>
+          <small>{attachment.uploadedByRole} | {formatDateTime(attachment.createdAt)}</small>
         </a>
       ))}
     </div>
@@ -346,7 +398,7 @@ export function ComplaintTable({ complaints, user, officers, assignmentState, on
             <tr key={complaint.id}>
               <td>
                 <button className="link-button" onClick={() => onSelectComplaint(complaint)} type="button">{complaint.title}</button>
-                <div className="small text-secondary">{complaint.category} • {complaint.location}</div>
+                <div className="small text-secondary">{complaint.category} | {complaint.location}</div>
               </td>
               <td><span className="badge text-bg-light">{complaint.status}</span></td>
               <td><span className="badge priority-badge">{complaint.priority}</span></td>

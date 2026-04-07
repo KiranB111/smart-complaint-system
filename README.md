@@ -18,8 +18,11 @@ This project is designed as a portfolio-ready civic tech system that demonstrate
 - Timeline tracking for each complaint
 - In-app notifications for citizens, officers, and admin
 - Email/SMS-style notification delivery status badges
+- Configurable email and SMS webhook delivery support
+- Real-time dashboard refresh using server-sent events
 - Smart auto-assignment based on availability, workload, and ratings
 - Admin-managed officer creation, editing, and activation control
+- Visual analytics dashboard with category, status, priority, and officer performance views
 - Analytics reporting with PDF and Excel export
 
 ## Problem Statement
@@ -225,6 +228,21 @@ export DB_USERNAME=root
 export DB_PASSWORD=your_mysql_password
 ```
 
+Optional notification delivery webhooks:
+
+**PowerShell**
+
+```powershell
+$env:EMAIL_NOTIFICATIONS_ENABLED="true"
+$env:EMAIL_WEBHOOK_URL="https://your-email-provider-webhook"
+$env:EMAIL_WEBHOOK_TOKEN="your_email_token"
+$env:EMAIL_FROM="peoplevoice@yourdomain.com"
+$env:SMS_NOTIFICATIONS_ENABLED="true"
+$env:SMS_WEBHOOK_URL="https://your-sms-provider-webhook"
+$env:SMS_WEBHOOK_TOKEN="your_sms_token"
+$env:SMS_FROM="PEOPLEVOICE"
+```
+
 ### Run the Backend
 
 ```bash
@@ -260,6 +278,21 @@ spring.datasource.password=${DB_PASSWORD:}
 ```
 
 This keeps credentials out of source control while still allowing local defaults where appropriate.
+
+Notification delivery is also environment-driven:
+
+```properties
+app.notifications.email.enabled=${EMAIL_NOTIFICATIONS_ENABLED:false}
+app.notifications.email.webhook-url=${EMAIL_WEBHOOK_URL:}
+app.notifications.email.auth-token=${EMAIL_WEBHOOK_TOKEN:}
+app.notifications.email.from=${EMAIL_FROM:peoplevoice@local}
+app.notifications.sms.enabled=${SMS_NOTIFICATIONS_ENABLED:false}
+app.notifications.sms.webhook-url=${SMS_WEBHOOK_URL:}
+app.notifications.sms.auth-token=${SMS_WEBHOOK_TOKEN:}
+app.notifications.sms.from=${SMS_FROM:PEOPLEVOICE}
+```
+
+When these are configured, People Voice will send notification payloads to your email and SMS provider webhooks and store the resulting delivery status as `SENT`, `SKIPPED`, or `FAILED`.
 
 ## API Overview
 
@@ -312,6 +345,7 @@ This keeps credentials out of source control while still allowing local defaults
 - Officer ratings are derived from completed complaint confirmations.
 - Complaint attachments and timeline entries are persisted as first-class records.
 - Notifications are generated for key workflow events across roles with email/SMS-style delivery status indicators.
+- Live dashboard updates are pushed through server-sent events for complaints and notifications.
 - The frontend provides separate role-based experiences for citizens, admins, and officers.
 
 ## Why This Project Works Well in a Portfolio
@@ -335,10 +369,8 @@ It is a strong showcase project for full-stack Java and React development, espec
 
 ## Future Improvements
 
-- Add email or SMS delivery for notifications
 - Introduce WebSocket-based real-time updates
 - Add charts for analytics and officer performance
-- Add edit/deactivate options for officer management
 - Deploy backend and frontend to a public cloud environment
 
 ## License

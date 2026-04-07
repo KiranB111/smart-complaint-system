@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +22,8 @@ public class NotificationService {
 
     private final AppNotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final NotificationDeliveryService deliveryService;
+    private final RealtimeEventService realtimeEventService;
 
     public List<NotificationResponse> getNotifications(Long userId) {
         return notificationRepository.findByRecipientIdOrderByCreatedAtDesc(userId).stream()
@@ -36,9 +39,13 @@ public class NotificationService {
         notification.setTitle(title);
         notification.setMessage(message);
         notification.setRead(false);
-        notification.setEmailStatus(hasValue(recipient.getEmail()) ? NotificationDeliveryStatus.SENT : NotificationDeliveryStatus.SKIPPED);
-        notification.setSmsStatus(hasValue(recipient.getPhone()) ? NotificationDeliveryStatus.SENT : NotificationDeliveryStatus.SKIPPED);
-        notificationRepository.save(notification);
+        notification.setEmailStatus(deliveryService.deliverEmail(recipient, type, title, message));
+        notification.setSmsStatus(deliveryService.deliverSms(recipient, type, title, message));
+        AppNotification saved = notificationRepository.save(notification);
+        realtimeEventService.publishToUser(recipient.getId(), "notification", Map.of(
+                "notificationId", saved.getId(),
+                "type", saved.getType().name()
+        ));
     }
 
     @Transactional
@@ -55,6 +62,10 @@ public class NotificationService {
         }
         notification.setRead(true);
         notificationRepository.save(notification);
+        realtimeEventService.publishToUser(userId, "notification", Map.of(
+                "notificationId", notification.getId(),
+                "type", "READ"
+        ));
     }
 
     private NotificationResponse toResponse(AppNotification notification) {
@@ -68,9 +79,5 @@ public class NotificationService {
                 notification.getSmsStatus().name(),
                 notification.getCreatedAt()
         );
-    }
-
-    private boolean hasValue(String value) {
-        return value != null && !value.isBlank();
     }
 }
