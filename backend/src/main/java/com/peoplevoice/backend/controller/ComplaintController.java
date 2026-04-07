@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -51,8 +52,17 @@ public class ComplaintController {
 
     @PutMapping("/{id}/assign")
     @PreAuthorize("hasRole('ADMIN')")
-    public ComplaintResponse assign(@PathVariable Long id, @Valid @RequestBody ComplaintAssignmentRequest request) {
-        return complaintService.assign(id, request.officerId());
+    public ComplaintResponse assign(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long id,
+            @Valid @RequestBody ComplaintAssignmentRequest request) {
+        return complaintService.assign(id, request.officerId(), principal.getUser().getId());
+    }
+
+    @PutMapping("/{id}/auto-assign")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ComplaintResponse autoAssign(@AuthenticationPrincipal UserPrincipal principal, @PathVariable Long id) {
+        return complaintService.autoAssign(id, principal.getUser().getId());
     }
 
     @PutMapping("/{id}/citizen-confirmation")
@@ -82,5 +92,14 @@ public class ComplaintController {
     @PreAuthorize("hasAnyRole('ADMIN','OFFICER')")
     public void delete(@PathVariable Long id) {
         complaintService.delete(id);
+    }
+
+    @PostMapping("/{id}/attachments")
+    @PreAuthorize("hasAnyRole('CITIZEN','ADMIN','OFFICER')")
+    public ComplaintResponse uploadAttachment(
+            @AuthenticationPrincipal UserPrincipal principal,
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+        return complaintService.addAttachment(id, principal.getUser().getId(), principal.getUser().getRole(), file);
     }
 }

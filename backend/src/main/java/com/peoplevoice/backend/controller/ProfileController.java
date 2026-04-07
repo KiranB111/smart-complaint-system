@@ -1,5 +1,6 @@
 package com.peoplevoice.backend.controller;
 
+import com.peoplevoice.backend.dto.CreateOfficerRequest;
 import com.peoplevoice.backend.dto.UserProfileResponse;
 import com.peoplevoice.backend.dto.OfficerAvailabilityUpdateRequest;
 import com.peoplevoice.backend.model.OfficerAvailability;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -44,5 +46,11 @@ public class ProfileController {
                 principal.getUser().getId(),
                 OfficerAvailability.valueOf(request.availability().toUpperCase())
         );
+    }
+
+    @PostMapping("/officers")
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserProfileResponse createOfficer(@Valid @RequestBody CreateOfficerRequest request) {
+        return userService.createOfficer(request);
     }
 }

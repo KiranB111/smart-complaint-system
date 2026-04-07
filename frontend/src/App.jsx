@@ -1,8 +1,9 @@
 import { Link, Navigate, Route, Routes } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { analyticsApi, authApi, complaintApi, userApi } from "./api";
+import { analyticsApi, authApi, complaintApi, notificationApi, userApi } from "./api";
 import {
   AppLayout,
+  AttachmentGallery,
   AuthCard,
   ComplaintForm,
   ComplaintTable,
@@ -10,7 +11,9 @@ import {
   HeroPanel,
   OfficerAvailabilityList,
   OfficerAvailabilityPanel,
-  SectionCard
+  OfficerCreateForm,
+  SectionCard,
+  TimelineList
 } from "./components";
 
 const emptyComplaint = {
@@ -23,6 +26,14 @@ const emptyComplaint = {
   locality: "Bengaluru Central",
   status: "OPEN",
   assignedOfficerId: null
+};
+
+const emptyOfficer = {
+  name: "",
+  email: "",
+  password: "",
+  phone: "",
+  availability: "AVAILABLE"
 };
 
 function useSession() {
@@ -66,7 +77,7 @@ function LoginPage({ onLogin }) {
     <HeroPanel>
       <AuthCard
         title="Secure civic grievance access"
-        subtitle="Citizens can create accounts and raise complaints, while admins and officers manage progress through a role-based workflow."
+        subtitle="Citizens can register, upload complaint evidence, and track progress while admins and officers coordinate the full workflow."
         error={error}
         submitLabel="Login"
         onSubmit={submit}
@@ -80,12 +91,7 @@ function LoginPage({ onLogin }) {
 }
 
 function RegisterPage({ onRegister }) {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    phone: ""
-  });
+  const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
   const [error, setError] = useState("");
 
   const submit = async (event) => {
@@ -102,7 +108,7 @@ function RegisterPage({ onRegister }) {
     <HeroPanel>
       <AuthCard
         title="Create your citizen account"
-        subtitle="New users can register once and start raising complaints for issues in their locality."
+        subtitle="Register once to raise locality complaints, upload images, and confirm final resolution yourself."
         error={error}
         submitLabel="Register"
         onSubmit={submit}
@@ -121,13 +127,18 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
   const [complaints, setComplaints] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [officers, setOfficers] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [assignmentState, setAssignmentState] = useState({});
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [form, setForm] = useState(emptyComplaint);
+  const [files, setFiles] = useState([]);
+  const [officerForm, setOfficerForm] = useState(emptyOfficer);
   const [message, setMessage] = useState("");
 
   const loadComplaints = async () => {
     const { data } = await complaintApi.list();
     setComplaints(data);
+    setSelectedComplaint((current) => current ? data.find((item) => item.id === current.id) || current : data[0] || null);
   };
 
   const loadAnalytics = async () => {
@@ -142,6 +153,11 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
     setOfficers(data);
   };
 
+  const loadNotifications = async () => {
+    const { data } = await notificationApi.list();
+    setNotifications(data);
+  };
+
   const refreshUser = async () => {
     const { data } = await userApi.me();
     onUserRefresh(data);
@@ -152,7 +168,11 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
     loadComplaints();
     loadAnalytics();
     loadOfficers();
-    const timer = setInterval(loadComplaints, 12000);
+    loadNotifications();
+    const timer = setInterval(() => {
+      loadComplaints();
+      loadNotifications();
+    }, 12000);
     return () => clearInterval(timer);
   }, [user.role]);
 
@@ -160,26 +180,30 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
     const total = complaints.length;
     const open = complaints.filter((item) => item.status === "OPEN").length;
     const assigned = complaints.filter((item) => item.status === "ASSIGNED").length;
-    const inProgress = complaints.filter((item) => item.status === "IN_PROGRESS" || item.status === "PENDING_CITIZEN_CONFIRMATION").length;
+    const inProgress = complaints.filter((item) => ["IN_PROGRESS", "PENDING_CITIZEN_CONFIRMATION"].includes(item.status)).length;
     const resolved = complaints.filter((item) => item.status === "RESOLVED").length;
     return [
       { label: "Total Complaints", value: total },
       { label: "Open", value: open },
       { label: "Assigned", value: assigned },
-      { label: "Resolved", value: resolved || inProgress }
+      { label: "Resolved", value: resolved, helper: `${inProgress} active` }
     ];
   }, [complaints]);
 
   const submitComplaint = async (event) => {
     event.preventDefault();
-    await complaintApi.create({
+    const { data } = await complaintApi.create({
       ...form,
       latitude: Number(form.latitude),
       longitude: Number(form.longitude)
     });
+    for (const file of files) {
+      await complaintApi.uploadAttachment(data.id, file);
+    }
     setForm(emptyComplaint);
-    setMessage("Complaint filed successfully. The admin will assign it to an available officer.");
-    loadComplaints();
+    setFiles([]);
+    setMessage("Complaint filed successfully with evidence. The admin will assign it to an available officer.");
+    await Promise.all([loadComplaints(), loadNotifications()]);
   };
 
   const updateComplaint = async (complaint, status) => {
@@ -194,24 +218,26 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
       status,
       assignedOfficerId: complaint.assignedOfficerId
     });
-    loadComplaints();
-    loadAnalytics();
+    await Promise.all([loadComplaints(), loadAnalytics(), loadNotifications()]);
   };
 
   const assignComplaint = async (complaintId) => {
     const officerId = Number(assignmentState[complaintId]);
     if (!officerId) return;
     await complaintApi.assign(complaintId, officerId);
-    await Promise.all([loadComplaints(), loadAnalytics(), loadOfficers()]);
+    await Promise.all([loadComplaints(), loadAnalytics(), loadOfficers(), loadNotifications()]);
+  };
+
+  const autoAssignComplaint = async (complaintId) => {
+    await complaintApi.autoAssign(complaintId);
+    await Promise.all([loadComplaints(), loadAnalytics(), loadOfficers(), loadNotifications()]);
   };
 
   const confirmComplaint = async (complaintId, resolved) => {
     let officerRating = null;
     if (resolved) {
       const value = window.prompt("Rate the officer's work from 1 to 5");
-      if (value === null) {
-        return;
-      }
+      if (value === null) return;
       officerRating = Number(value);
       if (!Number.isInteger(officerRating) || officerRating < 1 || officerRating > 5) {
         window.alert("Please enter a whole number between 1 and 5.");
@@ -219,16 +245,25 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
       }
     }
     await complaintApi.confirm(complaintId, { resolved, officerRating });
-    await loadComplaints();
-    if (user.role === "ADMIN") {
-      await loadOfficers();
-    }
+    await Promise.all([loadComplaints(), loadOfficers(), loadNotifications()]);
   };
 
   const updateAvailability = async (availability) => {
     const { data } = await userApi.updateAvailability(availability);
     onUserRefresh(data);
-    await loadComplaints();
+    await Promise.all([loadComplaints(), loadNotifications()]);
+  };
+
+  const createOfficer = async (event) => {
+    event.preventDefault();
+    await userApi.createOfficer(officerForm);
+    setOfficerForm(emptyOfficer);
+    await Promise.all([loadOfficers(), loadNotifications()]);
+  };
+
+  const markNotificationRead = async (id) => {
+    await notificationApi.markRead(id);
+    await loadNotifications();
   };
 
   const exportFile = async (type) => {
@@ -240,91 +275,132 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
     link.click();
   };
 
+  const complaintList = user.role === "OFFICER"
+    ? complaints.filter((item) => item.assignedOfficerId === user.id)
+    : complaints;
+
   return (
-    <AppLayout user={user} onLogout={onLogout}>
+    <AppLayout user={user} onLogout={onLogout} notifications={notifications} onMarkRead={markNotificationRead}>
       <DashboardCards items={complaintCards} />
 
-      {user.role === "CITIZEN" ? (
-        <div className="row g-4">
-          <div className="col-lg-5">
-            <SectionCard title="Raise a complaint" description="First-time citizens can create accounts, submit locality issues, and wait for admin assignment to officers.">
+      <div className="row g-4">
+        <div className="col-12">
+          {user.role === "CITIZEN" ? (
+            <SectionCard title="Raise a complaint" description="Upload exact images of the issue, submit the complaint, and track each step until resolution.">
               {message ? <div className="alert alert-success py-2">{message}</div> : null}
-              <ComplaintForm form={form} setForm={setForm} onSubmit={submitComplaint} submitLabel="Submit Complaint" />
+              <ComplaintForm form={form} setForm={setForm} files={files} setFiles={setFiles} onSubmit={submitComplaint} submitLabel="Submit Complaint" />
             </SectionCard>
-          </div>
-          <div className="col-lg-7">
-            <SectionCard title="Track and confirm progress" description="When locality work is completed, you decide whether the complaint should be resolved or kept in progress.">
-              <ComplaintTable complaints={complaints} user={user} officers={[]} assignmentState={{}} onAssignmentChange={() => {}} onAssign={() => {}} onOfficerUpdate={() => {}} onCitizenConfirm={confirmComplaint} />
-            </SectionCard>
-          </div>
-        </div>
-      ) : null}
+          ) : null}
 
-      {user.role === "ADMIN" ? (
-        <div className="row g-4">
-          <div className="col-lg-8">
-            <SectionCard title="Admin assignment desk" description="Assign complaints to available officers. Busy or offline officers are visible so work can be distributed more realistically.">
-              <ComplaintTable
-                complaints={complaints}
-                user={user}
-                officers={officers}
-                assignmentState={assignmentState}
-                onAssignmentChange={(complaintId, officerId) => setAssignmentState((current) => ({ ...current, [complaintId]: officerId }))}
-                onAssign={assignComplaint}
-                onOfficerUpdate={updateComplaint}
-                onCitizenConfirm={confirmComplaint}
-              />
-            </SectionCard>
-          </div>
-          <div className="col-lg-4">
-            <SectionCard title="Officer availability" description="Admins can quickly see which officers are free before assigning new work.">
-              <OfficerAvailabilityList officers={officers} />
-            </SectionCard>
-            <div className="mt-4">
-              <SectionCard title="Analytics and exports" description="Track progress and generate reports.">
-                {analytics ? (
-                  <>
-                    <div className="analytics-stack">
-                      <div className="metric-block">
-                        <span>Average Resolution Hours</span>
-                        <strong>{analytics.averageResolutionHours.toFixed(1)}</strong>
+          {user.role === "ADMIN" ? (
+            <div className="row g-4">
+              <div className="col-lg-8">
+                <SectionCard title="Smart assignment desk" description="Assign work manually or use auto-assignment to route complaints to the best available officer by workload and rating.">
+                  <ComplaintTable
+                    complaints={complaintList}
+                    user={user}
+                    officers={officers}
+                    assignmentState={assignmentState}
+                    onAssignmentChange={(complaintId, officerId) => setAssignmentState((current) => ({ ...current, [complaintId]: officerId }))}
+                    onAssign={assignComplaint}
+                    onAutoAssign={autoAssignComplaint}
+                    onOfficerUpdate={updateComplaint}
+                    onCitizenConfirm={confirmComplaint}
+                    onSelectComplaint={setSelectedComplaint}
+                  />
+                </SectionCard>
+              </div>
+              <div className="col-lg-4 d-grid gap-4">
+                <SectionCard title="Officer management" description="Create officers and monitor availability and ratings.">
+                  <OfficerCreateForm form={officerForm} setForm={setOfficerForm} onSubmit={createOfficer} />
+                  <hr />
+                  <OfficerAvailabilityList officers={officers} />
+                </SectionCard>
+                <SectionCard title="Analytics and exports" description="Generate reports and monitor service performance.">
+                  {analytics ? (
+                    <>
+                      <div className="analytics-stack">
+                        <div className="metric-block">
+                          <span>Average Resolution Hours</span>
+                          <strong>{analytics.averageResolutionHours.toFixed(1)}</strong>
+                        </div>
+                        <div className="metric-block">
+                          <span>Status Mix</span>
+                          {analytics.complaintsByStatus.map((item) => <small key={item.label}>{item.label}: {item.count}</small>)}
+                        </div>
                       </div>
-                    </div>
-                    <div className="d-flex gap-2 mt-3">
-                      <button className="btn btn-dark" onClick={() => exportFile("pdf")}>Export PDF</button>
-                      <button className="btn btn-outline-dark" onClick={() => exportFile("excel")}>Export Excel</button>
-                    </div>
-                  </>
-                ) : <p className="text-muted mb-0">Loading analytics...</p>}
-              </SectionCard>
+                      <div className="d-flex gap-2 mt-3">
+                        <button className="btn btn-dark" onClick={() => exportFile("pdf")}>Export PDF</button>
+                        <button className="btn btn-outline-dark" onClick={() => exportFile("excel")}>Export Excel</button>
+                      </div>
+                    </>
+                  ) : <p className="text-muted mb-0">Loading analytics...</p>}
+                </SectionCard>
+              </div>
             </div>
-          </div>
-        </div>
-      ) : null}
+          ) : null}
 
-      {user.role === "OFFICER" ? (
-        <div className="row g-4">
-          <div className="col-lg-8">
-            <SectionCard title="Officer workflow" description="Update your own availability, start assigned complaints, and mark field work complete for citizen confirmation.">
+          {user.role === "OFFICER" ? (
+            <div className="row g-4">
+              <div className="col-lg-8">
+                <SectionCard title="Officer workflow" description="Handle assigned complaints, upload completion proof, and move cases to citizen confirmation.">
+                  <ComplaintTable
+                    complaints={complaintList}
+                    user={user}
+                    officers={[]}
+                    assignmentState={{}}
+                    onAssignmentChange={() => {}}
+                    onAssign={() => {}}
+                    onAutoAssign={() => {}}
+                    onOfficerUpdate={updateComplaint}
+                    onCitizenConfirm={confirmComplaint}
+                    onSelectComplaint={setSelectedComplaint}
+                  />
+                </SectionCard>
+              </div>
+              <div className="col-lg-4">
+                <SectionCard title="My availability" description="Set your capacity so admin can route tasks more effectively.">
+                  <OfficerAvailabilityPanel currentAvailability={user.availability} onChange={updateAvailability} />
+                </SectionCard>
+              </div>
+            </div>
+          ) : null}
+
+          {user.role === "CITIZEN" ? (
+            <SectionCard title="My complaints" description="Follow progress, review uploaded evidence, and confirm when locality work is truly complete.">
               <ComplaintTable
-                complaints={complaints.filter((item) => item.assignedOfficerId === user.id)}
+                complaints={complaintList}
                 user={user}
                 officers={[]}
                 assignmentState={{}}
                 onAssignmentChange={() => {}}
                 onAssign={() => {}}
+                onAutoAssign={() => {}}
                 onOfficerUpdate={updateComplaint}
                 onCitizenConfirm={confirmComplaint}
+                onSelectComplaint={setSelectedComplaint}
               />
             </SectionCard>
-          </div>
-          <div className="col-lg-4">
-            <SectionCard title="My availability" description="Update availability so the admin can assign work based on officer capacity.">
-              <OfficerAvailabilityPanel currentAvailability={user.availability} onChange={updateAvailability} />
-            </SectionCard>
-          </div>
+          ) : null}
         </div>
-      ) : null}
+
+        <div className="col-12">
+          <SectionCard title="Complaint detail" description="Open any complaint to review evidence and the full status timeline.">
+            {selectedComplaint ? (
+              <div className="row g-4">
+                <div className="col-lg-5">
+                  <h5>Attachments</h5>
+                  <AttachmentGallery attachments={selectedComplaint.attachments} />
+                </div>
+                <div className="col-lg-7">
+                  <h5>Timeline</h5>
+                  <TimelineList timeline={selectedComplaint.timeline} />
+                </div>
+              </div>
+            ) : <p className="text-secondary mb-0">Select a complaint to inspect attachments and timeline.</p>}
+          </SectionCard>
+        </div>
+      </div>
     </AppLayout>
   );
 }

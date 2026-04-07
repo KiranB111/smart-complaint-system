@@ -21,7 +21,8 @@ export const authApi = {
 export const userApi = {
   me: () => api.get("/users/me"),
   officers: () => api.get("/users/officers"),
-  updateAvailability: (availability) => api.put("/users/me/availability", { availability })
+  updateAvailability: (availability) => api.put("/users/me/availability", { availability }),
+  createOfficer: (payload) => api.post("/users/officers", payload)
 };
 
 export const complaintApi = {
@@ -29,7 +30,15 @@ export const complaintApi = {
   create: (payload) => api.post("/complaints", payload),
   update: (id, payload) => api.put(`/complaints/${id}`, payload),
   assign: (id, officerId) => api.put(`/complaints/${id}/assign`, { officerId }),
+  autoAssign: (id) => api.put(`/complaints/${id}/auto-assign`),
   confirm: (id, payload) => api.put(`/complaints/${id}/citizen-confirmation`, payload),
+  uploadAttachment: (id, file) => {
+    const form = new FormData();
+    form.append("file", file);
+    return api.post(`/complaints/${id}/attachments`, form, {
+      headers: { "Content-Type": "multipart/form-data" }
+    });
+  },
   remove: (id) => api.delete(`/complaints/${id}`)
 };
 
@@ -37,6 +46,11 @@ export const analyticsApi = {
   reports: () => api.get("/analytics/reports"),
   exportPdf: () => api.get("/analytics/export/pdf", { responseType: "blob" }),
   exportExcel: () => api.get("/analytics/export/excel", { responseType: "blob" })
+};
+
+export const notificationApi = {
+  list: () => api.get("/notifications"),
+  markRead: (id) => api.put(`/notifications/${id}/read`)
 };
 
 export default api;

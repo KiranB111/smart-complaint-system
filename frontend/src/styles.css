@@ -5,6 +5,7 @@
   --sand: #ffe8bf;
   --accent: #0f766e;
   --panel: rgba(255, 255, 255, 0.82);
+  --soft-border: rgba(21, 34, 56, 0.08);
 }
 
 body {
@@ -28,7 +29,7 @@ body {
 .nav-surface {
   background: var(--panel);
   backdrop-filter: blur(18px);
-  border: 1px solid rgba(21, 34, 56, 0.08);
+  border: 1px solid var(--soft-border);
   box-shadow: 0 24px 60px rgba(21, 34, 56, 0.1);
 }
 
@@ -60,11 +61,19 @@ body {
   height: 100%;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
 .stat-card {
   padding: 1.4rem;
 }
 
-.stat-card span {
+.stat-card span,
+.stat-card small {
   display: block;
   color: #51607b;
 }
@@ -91,10 +100,91 @@ body {
   background: rgba(21, 34, 56, 0.05);
 }
 
+.sticky-panel {
+  position: sticky;
+  top: 1rem;
+}
+
+.notification-item {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.9rem;
+  border-radius: 16px;
+  text-align: left;
+  border: 1px solid var(--soft-border);
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.notification-item.unread {
+  border-color: rgba(15, 118, 110, 0.3);
+  background: rgba(15, 118, 110, 0.08);
+}
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.attachment-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.attachment-card {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.9rem;
+  border-radius: 16px;
+  text-decoration: none;
+  color: var(--ink);
+  background: rgba(21, 34, 56, 0.05);
+}
+
+.timeline-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.timeline-item {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 0.8rem;
+  align-items: start;
+}
+
+.timeline-dot {
+  width: 12px;
+  height: 12px;
+  margin-top: 0.25rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #0f766e, #22c55e);
+}
+
+.tiny-text {
+  font-size: 0.78rem;
+  color: #66758f;
+}
+
+.w-fit {
+  width: fit-content;
+}
+
 @media (max-width: 768px) {
   .glass-card,
   .section-card,
   .stat-card {
     border-radius: 20px;
+  }
+
+  .section-header {
+    flex-direction: column;
+  }
+
+  .sticky-panel {
+    position: static;
   }
 }

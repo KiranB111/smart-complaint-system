@@ -40,4 +40,6 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     long countByStatus(ComplaintStatus status);
 
     long countByPriority(ComplaintPriority priority);
+
+    long countByAssignedOfficerIdAndStatusIn(Long assignedOfficerId, List<ComplaintStatus> statuses);
 }

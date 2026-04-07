@@ -1,12 +1,14 @@
 package com.peoplevoice.backend.service;
 
 import com.peoplevoice.backend.dto.UserProfileResponse;
+import com.peoplevoice.backend.dto.CreateOfficerRequest;
 import com.peoplevoice.backend.model.OfficerAvailability;
 import com.peoplevoice.backend.model.Role;
 import com.peoplevoice.backend.model.User;
 import com.peoplevoice.backend.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public UserProfileResponse getProfile(Long id) {
         return userRepository.findById(id)
@@ -32,6 +35,20 @@ public class UserService {
             throw new IllegalArgumentException("Only officers can update availability");
         }
         user.setAvailability(availability);
+        return toProfile(userRepository.save(user));
+    }
+
+    public UserProfileResponse createOfficer(CreateOfficerRequest request) {
+        userRepository.findByEmail(request.email()).ifPresent(existing -> {
+            throw new IllegalArgumentException("Email already registered");
+        });
+        User user = new User();
+        user.setName(request.name());
+        user.setEmail(request.email());
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setPhone(request.phone());
+        user.setRole(Role.OFFICER);
+        user.setAvailability(request.availability() == null ? OfficerAvailability.AVAILABLE : request.availability());
         return toProfile(userRepository.save(user));
     }
 

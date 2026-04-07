@@ -13,6 +13,11 @@ This project is designed as a portfolio-ready civic tech system that demonstrate
 - Officer progress updates and locality work handling
 - Citizen-side final resolution confirmation
 - Officer ratings based on completed work
+- Complaint image upload and attachment review
+- Timeline tracking for each complaint
+- In-app notifications for citizens, officers, and admin
+- Smart auto-assignment based on availability, workload, and ratings
+- Admin-managed officer creation
 - Analytics reporting with PDF and Excel export
 
 ## Problem Statement
@@ -22,7 +27,7 @@ Public grievance systems often make it difficult for citizens to know who is han
 - Citizens a direct way to register, raise complaints, and confirm final resolution
 - Admins a structured assignment dashboard to distribute work across officers
 - Officers a focused operational queue with availability-based routing
-- Governance teams better visibility into progress, workload, and officer performance
+- Governance teams better visibility into progress, workload, notifications, and officer performance
 
 ## Tech Stack
 
@@ -56,7 +61,9 @@ Public grievance systems often make it difficult for citizens to know who is han
 
 - Register a new citizen account
 - Log in and submit a complaint
+- Upload image evidence of the issue
 - Track complaint assignment and progress
+- Review complaint timeline and attachments
 - Confirm whether locality work is actually resolved
 - Rate the officer after successful completion
 
@@ -65,6 +72,9 @@ Public grievance systems often make it difficult for citizens to know who is han
 - View all complaints in the assignment desk
 - Monitor officer availability
 - Assign complaints only to available officers
+- Auto-assign complaints using workload and rating aware routing
+- Create and manage officer accounts
+- Review notification alerts and complaint timelines
 - Track analytics and export operational reports
 
 ### Officer Flow
@@ -73,6 +83,7 @@ Public grievance systems often make it difficult for citizens to know who is han
 - Work only on assigned complaints
 - Move complaints to `IN_PROGRESS`
 - Mark work as complete and send it for citizen confirmation
+- Receive notification updates when work is assigned or status changes
 
 ## Features
 
@@ -91,6 +102,14 @@ Complaints are auto-prioritized using locality-density heuristics and category i
 ### Officer Rating System
 
 After confirming a complaint is resolved, the citizen can rate the officer from 1 to 5. Ratings are aggregated and shown in the admin officer panel as average score and total count.
+
+### Timeline and Notifications
+
+Each complaint maintains a timeline of important workflow events such as submission, assignment, status updates, attachment uploads, and citizen confirmation. The system also generates in-app notifications so citizens, officers, and admins can quickly see actions that need attention.
+
+### File Uploads and Evidence
+
+Citizens can upload image evidence while submitting or updating complaints. Attachments remain visible in the complaint detail view so admins and officers can understand the issue before acting on it.
 
 ## Screenshots
 
@@ -136,11 +155,14 @@ flowchart LR
     C --> D["Spring Security + JWT"]
     C --> E["Complaint Workflow Service"]
     E --> F["Availability-based Assignment"]
-    E --> G["Citizen Resolution Confirmation"]
-    E --> H["Officer Rating Aggregation"]
-    E --> I["Analytics + Export Module"]
-    C --> J["JPA Repository Layer"]
-    J --> K["MySQL"]
+    E --> G["Smart Auto-Assignment"]
+    E --> H["Timeline + Notification Services"]
+    E --> I["Citizen Resolution Confirmation"]
+    E --> J["Officer Rating Aggregation"]
+    E --> K["Analytics + Export Module"]
+    C --> L["File Attachment Storage"]
+    C --> M["JPA Repository Layer"]
+    M --> N["MySQL"]
 ```
 
 The architecture is layered so the UI focuses on role-based user flows, the backend owns workflow and assignment rules, and the database persists complaints, users, officer ratings, and analytics-ready records.
@@ -250,6 +272,8 @@ This keeps credentials out of source control while still allowing local defaults
 - `GET /api/complaints/{id}`
 - `PUT /api/complaints/{id}`
 - `PUT /api/complaints/{id}/assign`
+- `PUT /api/complaints/{id}/auto-assign`
+- `POST /api/complaints/{id}/attachments`
 - `PUT /api/complaints/{id}/citizen-confirmation`
 - `DELETE /api/complaints/{id}`
 
@@ -257,7 +281,14 @@ This keeps credentials out of source control while still allowing local defaults
 
 - `GET /api/users/me`
 - `GET /api/users/officers`
+- `POST /api/users/officers`
 - `PUT /api/users/me/availability`
+
+### Notifications and Public Files
+
+- `GET /api/notifications`
+- `PUT /api/notifications/{id}/read`
+- `GET /api/public/files/{id}`
 
 ### Analytics
 
@@ -270,8 +301,11 @@ This keeps credentials out of source control while still allowing local defaults
 - The backend is organized into controller, service, repository, DTO, model, and security layers.
 - Registration is citizen-first by default.
 - Officer assignment is availability-aware and admin-controlled.
+- Smart assignment considers availability, active workload, and officer ratings.
 - Complaint resolution is not final until the citizen confirms it.
 - Officer ratings are derived from completed complaint confirmations.
+- Complaint attachments and timeline entries are persisted as first-class records.
+- Notifications are generated for key workflow events across roles.
 - The frontend provides separate role-based experiences for citizens, admins, and officers.
 
 ## Why This Project Works Well in a Portfolio
@@ -281,7 +315,10 @@ People Voice demonstrates more than basic CRUD. It combines:
 - secure authentication and authorization
 - multi-role workflow design
 - availability-based operational assignment
+- smart routing using workload and performance signals
 - citizen-driven final resolution logic
+- complaint evidence upload and review
+- timeline visibility and in-app notifications
 - officer feedback and rating aggregation
 - export/reporting functionality
 - a practical civic technology use case
@@ -290,12 +327,10 @@ It is a strong showcase project for full-stack Java and React development, espec
 
 ## Future Improvements
 
-- Add complaint image and document uploads
-- Add live notifications by email or SMS
+- Add email or SMS delivery for notifications
 - Introduce WebSocket-based real-time updates
-- Add complaint history timeline and audit logs
 - Add charts for analytics and officer performance
-- Add admin-managed staff creation instead of relying on seeded demo users
+- Add edit/deactivate options for officer management
 - Deploy backend and frontend to a public cloud environment
 
 ## License
