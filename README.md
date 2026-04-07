@@ -69,6 +69,54 @@ Public grievance systems are often difficult to track, slow to respond, and disc
 
 Complaints are auto-prioritized using locality density heuristics and category importance. Issues in high-density areas or essential public-service categories can be escalated to higher urgency.
 
+## Screenshots
+
+Add screenshots to a `screenshots/` folder and reference them here to make the project feel more tangible for reviewers.
+
+Suggested captures:
+
+- Login page
+- Citizen complaint dashboard
+- Complaint submission form
+- Officer or admin operations dashboard
+- Analytics and export section
+
+Example structure:
+
+```text
+screenshots/
+|-- login.png
+|-- citizen-dashboard.png
+|-- complaint-form.png
+|-- admin-dashboard.png
+`-- analytics.png
+```
+
+Example Markdown once images are added:
+
+```md
+![Login Screen](screenshots/login.png)
+![Citizen Dashboard](screenshots/citizen-dashboard.png)
+![Admin Dashboard](screenshots/admin-dashboard.png)
+```
+
+## Architecture Diagram
+
+```mermaid
+flowchart LR
+    A["Citizen / Officer / Admin"] --> B["React Frontend<br/>Vite + React Router + Axios"]
+    B --> C["Spring Boot REST API"]
+    C --> D["Spring Security + JWT"]
+    C --> E["Service Layer"]
+    E --> F["Complaint Prioritization Engine"]
+    E --> G["Analytics & Export Module"]
+    E --> H["JPA Repository Layer"]
+    H --> I["H2 / MySQL / PostgreSQL"]
+    G --> J["PDF / Excel Reports"]
+```
+
+The architecture is intentionally layered so the project is easy to maintain and extend. The frontend handles user flows and dashboard views, the backend enforces authentication and business rules, and the data layer persists complaints, users, and analytics-ready records.
+
 ## Project Structure
 
 ```text
