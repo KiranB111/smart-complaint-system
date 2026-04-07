@@ -97,6 +97,75 @@ function LoginPage({ onLogin }) {
   );
 }
 
+function HomePage() {
+  return (
+    <div className="landing-shell">
+      <header className="landing-nav container py-4">
+        <div>
+          <p className="eyebrow mb-1">People Voice</p>
+          <h1 className="landing-brand mb-0">Smart Citizen Governance System</h1>
+        </div>
+        <div className="landing-actions">
+          <Link className="btn btn-outline-dark" to="/login">Login</Link>
+          <Link className="btn btn-dark" to="/register">Register</Link>
+        </div>
+      </header>
+
+      <main className="container pb-5">
+        <section className="landing-hero">
+          <div className="landing-copy">
+            <p className="eyebrow">People First Civic Workflow</p>
+            <h2>Report, assign, track, and resolve public issues with one connected platform.</h2>
+            <p className="landing-lead">
+              People Voice helps citizens raise complaints with image evidence, enables admins to assign work based on officer availability,
+              and gives officers and citizens a transparent workflow from issue reporting to final resolution confirmation.
+            </p>
+            <div className="landing-actions">
+              <Link className="btn btn-dark btn-lg" to="/register">Create Citizen Account</Link>
+              <Link className="btn btn-outline-dark btn-lg" to="/login">Sign In</Link>
+            </div>
+          </div>
+          <div className="landing-panel">
+            <div className="landing-card">
+              <span>Citizen</span>
+              <strong>Register, upload complaint images, and track progress.</strong>
+            </div>
+            <div className="landing-card">
+              <span>Admin</span>
+              <strong>Assign complaints smartly, manage officers, and monitor analytics.</strong>
+            </div>
+            <div className="landing-card">
+              <span>Officer</span>
+              <strong>Update field progress, upload completion proof, and close the loop.</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-grid">
+          <article className="landing-feature">
+            <h3>Transparent Complaint Lifecycle</h3>
+            <p>
+              Citizens can file complaints, review timeline updates, inspect proof images, and confirm whether local work was actually completed.
+            </p>
+          </article>
+          <article className="landing-feature">
+            <h3>Smart Assignment Workflow</h3>
+            <p>
+              Admins route complaints based on officer availability, active workload, and performance signals to improve resolution efficiency.
+            </p>
+          </article>
+          <article className="landing-feature">
+            <h3>Real-Time Governance View</h3>
+            <p>
+              Notifications, analytics, ratings, and complaint updates stay visible across the platform for faster operational coordination.
+            </p>
+          </article>
+        </section>
+      </main>
+    </div>
+  );
+}
+
 function RegisterPage({ onRegister }) {
   const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
   const [error, setError] = useState("");
@@ -602,7 +671,7 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={user ? <Dashboard user={user} onLogout={clearSession} onUserRefresh={setUser} /> : <Navigate to="/login" replace />} />
+      <Route path="/" element={user ? <Dashboard user={user} onLogout={clearSession} onUserRefresh={setUser} /> : <HomePage />} />
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage onLogin={saveSession} />} />
       <Route path="/register" element={user ? <Navigate to="/" replace /> : <RegisterPage onRegister={saveSession} />} />
     </Routes>
