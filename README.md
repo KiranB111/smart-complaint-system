@@ -318,7 +318,7 @@ When these are configured, People Voice will send notification payloads to your 
 
 ### Backend Deployment
 
-Deploy the `backend` folder as a Spring Boot service.
+Deploy the `backend` folder as a Docker web service on Render.
 
 Required environment variables:
 
@@ -339,16 +339,12 @@ SMS_WEBHOOK_URL=
 SMS_WEBHOOK_TOKEN=
 ```
 
-On Render, a typical setup is:
+On Render, use:
 
+- Language: `Docker`
 - Root directory: `backend`
-- Build command: `mvn clean install`
-- Start command: `mvn spring-boot:run`
 
-If you prefer a jar launch in production:
-
-- Build command: `mvn clean package`
-- Start command: `java -jar target/smart-citizen-governance-backend-0.0.1-SNAPSHOT.jar`
+The repo includes a production-ready Dockerfile at `backend/Dockerfile`.
 
 ### Frontend Deployment
 
