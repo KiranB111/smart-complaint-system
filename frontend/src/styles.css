@@ -1,0 +1,100 @@
+:root {
+  --ink: #152238;
+  --mist: #eef4ff;
+  --sky: #7dc8ff;
+  --sand: #ffe8bf;
+  --accent: #0f766e;
+  --panel: rgba(255, 255, 255, 0.82);
+}
+
+body {
+  margin: 0;
+  font-family: "Manrope", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(125, 200, 255, 0.5), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(255, 232, 191, 0.6), transparent 25%),
+    linear-gradient(135deg, #edf6ff, #fffaf1 60%, #f2fffa);
+  color: var(--ink);
+}
+
+.hero-shell,
+.app-shell {
+  min-height: 100vh;
+}
+
+.glass-card,
+.section-card,
+.stat-card,
+.nav-surface {
+  background: var(--panel);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(21, 34, 56, 0.08);
+  box-shadow: 0 24px 60px rgba(21, 34, 56, 0.1);
+}
+
+.glass-card,
+.section-card,
+.stat-card {
+  border-radius: 28px;
+}
+
+.glass-card h1,
+.section-card h2 {
+  font-weight: 800;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.78rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.nav-surface {
+  border-radius: 0 0 24px 24px;
+}
+
+.section-card {
+  padding: 1.5rem;
+  height: 100%;
+}
+
+.stat-card {
+  padding: 1.4rem;
+}
+
+.stat-card span {
+  display: block;
+  color: #51607b;
+}
+
+.stat-card strong {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.priority-badge {
+  background: linear-gradient(135deg, #0f766e, #22c55e);
+  color: white;
+}
+
+.analytics-stack,
+.metric-block {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.metric-block {
+  padding: 1rem;
+  border-radius: 20px;
+  background: rgba(21, 34, 56, 0.05);
+}
+
+@media (max-width: 768px) {
+  .glass-card,
+  .section-card,
+  .stat-card {
+    border-radius: 20px;
+  }
+}
