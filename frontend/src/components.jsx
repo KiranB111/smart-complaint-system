@@ -177,18 +177,10 @@ export function ComplaintForm({ form, setForm, files, setFiles, onSubmit, submit
           </select>
         </div>
         <div className="col-md-6">
-          <input className="form-control" placeholder="Location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+          <input className="form-control" placeholder="Address or landmark" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
         </div>
       </div>
-      <div className="row g-3">
-        <div className="col-md-6">
-          <input className="form-control" type="number" step="any" placeholder="Latitude" value={form.latitude} onChange={(e) => setForm({ ...form, latitude: e.target.value })} />
-        </div>
-        <div className="col-md-6">
-          <input className="form-control" type="number" step="any" placeholder="Longitude" value={form.longitude} onChange={(e) => setForm({ ...form, longitude: e.target.value })} />
-        </div>
-      </div>
-      <input className="form-control" placeholder="Locality" value={form.locality} onChange={(e) => setForm({ ...form, locality: e.target.value })} />
+      <input className="form-control" placeholder="Locality / area" value={form.locality} onChange={(e) => setForm({ ...form, locality: e.target.value })} />
       <div>
         <label className="form-label fw-semibold">Complaint images</label>
         <input className="form-control" type="file" multiple accept="image/*" onChange={(e) => setFiles(Array.from(e.target.files || []))} />

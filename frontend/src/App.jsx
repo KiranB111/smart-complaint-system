@@ -28,8 +28,6 @@ const emptyComplaint = {
   description: "",
   category: "Sanitation",
   location: "",
-  latitude: 0,
-  longitude: 0,
   locality: "Bengaluru Central",
   status: "OPEN",
   assignedOfficerId: null
@@ -308,8 +306,8 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
     event.preventDefault();
     const { data } = await complaintApi.create({
       ...form,
-      latitude: Number(form.latitude),
-      longitude: Number(form.longitude)
+      latitude: null,
+      longitude: null
     });
     for (const file of files) {
       await complaintApi.uploadAttachment(data.id, file);
