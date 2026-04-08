@@ -19,16 +19,19 @@ export function HeroPanel({ children }) {
   );
 }
 
-export function AuthCard({ title, subtitle, children, error, submitLabel, onSubmit, footer }) {
+export function AuthCard({ title, subtitle, children, error, success, submitLabel, onSubmit, footer, submitting = false }) {
   return (
     <div className="glass-card p-4 p-lg-5">
       <p className="eyebrow">People Voice</p>
       <h1>{title}</h1>
       <p className="text-secondary mb-4">{subtitle}</p>
+      {success ? <div className="alert alert-success py-2">{success}</div> : null}
       {error ? <div className="alert alert-danger py-2">{error}</div> : null}
       <form className="d-grid gap-3" onSubmit={onSubmit}>
         {children}
-        <button className="btn btn-primary btn-lg" type="submit">{submitLabel}</button>
+        <button className="btn btn-primary btn-lg" type="submit" disabled={submitting}>
+          {submitLabel}
+        </button>
       </form>
       {footer ? <div className="mt-3 text-secondary">{footer}</div> : null}
     </div>
@@ -164,8 +167,8 @@ export function NotificationFeed({ notifications, onMarkRead }) {
 export function ComplaintForm({ form, setForm, files, setFiles, onSubmit, submitLabel }) {
   return (
     <form className="d-grid gap-3" onSubmit={onSubmit}>
-      <input className="form-control" placeholder="Complaint title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-      <textarea className="form-control" rows="4" placeholder="Describe the issue" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+      <input className="form-control" placeholder="Complaint title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+      <textarea className="form-control" rows="4" placeholder="Describe the issue" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
       <div className="row g-3">
         <div className="col-md-6">
           <select className="form-select" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
@@ -177,10 +180,10 @@ export function ComplaintForm({ form, setForm, files, setFiles, onSubmit, submit
           </select>
         </div>
         <div className="col-md-6">
-          <input className="form-control" placeholder="Address or landmark" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
+          <input className="form-control" placeholder="Address or landmark" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} required />
         </div>
       </div>
-      <input className="form-control" placeholder="Locality / area" value={form.locality} onChange={(e) => setForm({ ...form, locality: e.target.value })} />
+      <input className="form-control" placeholder="Locality / area" value={form.locality} onChange={(e) => setForm({ ...form, locality: e.target.value })} required />
       <div>
         <label className="form-label fw-semibold">Complaint images</label>
         <input className="form-control" type="file" multiple accept="image/*" onChange={(e) => setFiles(Array.from(e.target.files || []))} />

@@ -1,4 +1,4 @@
-import { Link, Navigate, Route, Routes } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { analyticsApi, authApi, complaintApi, notificationApi, realtimeStreamUrl, userApi } from "./api";
 import {
@@ -65,16 +65,28 @@ function useSession() {
 }
 
 function LoginPage({ onLogin }) {
-  const [form, setForm] = useState({ email: "citizen@peoplevoice.local", password: "password" });
+  const location = useLocation();
+  const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const registrationState = location.state;
+
+  useEffect(() => {
+    if (!registrationState?.registeredEmail) return;
+    setForm((current) => ({ ...current, email: registrationState.registeredEmail, password: "" }));
+  }, [registrationState]);
 
   const submit = async (event) => {
     event.preventDefault();
     try {
+      setSubmitting(true);
+      setError("");
       const { data } = await authApi.login(form);
       onLogin(data);
     } catch (err) {
       setError(err.response?.data?.message || "Unable to sign in");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -84,8 +96,10 @@ function LoginPage({ onLogin }) {
         title="Secure civic grievance access"
         subtitle="Citizens can register, upload complaint evidence, and track progress while admins and officers coordinate the full workflow."
         error={error}
-        submitLabel="Login"
+        success={registrationState?.message || ""}
+        submitLabel={submitting ? "Signing in..." : "Login"}
         onSubmit={submit}
+        submitting={submitting}
         footer={<span>First time here? <Link to="/register">Create your citizen account</Link></span>}
       >
         <input className="form-control" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
@@ -164,17 +178,55 @@ function HomePage() {
   );
 }
 
-function RegisterPage({ onRegister }) {
+function RegisterPage() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const submit = async (event) => {
     event.preventDefault();
+    if (submitting) {
+      return;
+    }
+
+    const payload = {
+      name: form.name.trim(),
+      email: form.email.trim().toLowerCase(),
+      password: form.password,
+      phone: form.phone.trim()
+    };
+
+    if (!payload.name || !payload.email || !payload.password) {
+      setError("Name, email, and password are required");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+      setError("Enter a valid email address");
+      return;
+    }
+
+    if (payload.password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
     try {
-      const { data } = await authApi.register(form);
-      onRegister(data);
+      setSubmitting(true);
+      setError("");
+      await authApi.register(payload);
+      navigate("/login", {
+        replace: true,
+        state: {
+          registeredEmail: payload.email,
+          message: "Account created successfully. Please login to continue."
+        }
+      });
     } catch (err) {
       setError(err.response?.data?.message || "Unable to register");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -184,13 +236,14 @@ function RegisterPage({ onRegister }) {
         title="Create your citizen account"
         subtitle="Register once to raise locality complaints, upload images, and confirm final resolution yourself."
         error={error}
-        submitLabel="Register"
+        submitLabel={submitting ? "Creating account..." : "Register"}
         onSubmit={submit}
+        submitting={submitting}
         footer={<span>Already registered? <Link to="/login">Login here</Link></span>}
       >
-        <input className="form-control" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <input className="form-control" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-        <input className="form-control" type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        <input className="form-control" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+        <input className="form-control" type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+        <input className="form-control" type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} minLength={6} required />
         <input className="form-control" placeholder="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
       </AuthCard>
     </HeroPanel>
@@ -304,10 +357,23 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
 
   const submitComplaint = async (event) => {
     event.preventDefault();
-    const { data } = await complaintApi.create({
+    const payload = {
       ...form,
+      title: form.title.trim(),
+      description: form.description.trim(),
+      location: form.location.trim(),
+      locality: form.locality.trim(),
       latitude: null,
       longitude: null
+    };
+
+    if (!payload.title || !payload.description || !payload.location || !payload.locality) {
+      setMessage("Complaint title, issue description, address, and locality are required.");
+      return;
+    }
+
+    const { data } = await complaintApi.create({
+      ...payload
     });
     for (const file of files) {
       await complaintApi.uploadAttachment(data.id, file);
@@ -671,7 +737,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={user ? <Dashboard user={user} onLogout={clearSession} onUserRefresh={setUser} /> : <HomePage />} />
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage onLogin={saveSession} />} />
-      <Route path="/register" element={user ? <Navigate to="/" replace /> : <RegisterPage onRegister={saveSession} />} />
+      <Route path="/register" element={user ? <Navigate to="/" replace /> : <RegisterPage />} />
     </Routes>
   );
 }
