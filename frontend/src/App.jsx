@@ -72,8 +72,8 @@ function LoginPage({ onLogin }) {
   const registrationState = location.state;
 
   useEffect(() => {
-    if (!registrationState?.registeredEmail) return;
-    setForm((current) => ({ ...current, email: registrationState.registeredEmail, password: "" }));
+    if (!registrationState?.message) return;
+    setForm({ email: "", password: "" });
   }, [registrationState]);
 
   const submit = async (event) => {
@@ -102,8 +102,8 @@ function LoginPage({ onLogin }) {
         submitting={submitting}
         footer={<span>First time here? <Link to="/register">Create your citizen account</Link></span>}
       >
-        <input className="form-control" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-        <input className="form-control" type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        <input className="form-control" type="email" placeholder="Email" autoComplete="off" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+        <input className="form-control" type="password" placeholder="Password" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
       </AuthCard>
     </HeroPanel>
   );
@@ -219,7 +219,6 @@ function RegisterPage() {
       navigate("/login", {
         replace: true,
         state: {
-          registeredEmail: payload.email,
           message: "Account created successfully. Please login to continue."
         }
       });
@@ -241,10 +240,10 @@ function RegisterPage() {
         submitting={submitting}
         footer={<span>Already registered? <Link to="/login">Login here</Link></span>}
       >
-        <input className="form-control" placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-        <input className="form-control" type="email" placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-        <input className="form-control" type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} minLength={6} required />
-        <input className="form-control" placeholder="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+        <input className="form-control" placeholder="Name" autoComplete="off" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+        <input className="form-control" type="email" placeholder="Email" autoComplete="off" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+        <input className="form-control" type="password" placeholder="Password" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} minLength={6} required />
+        <input className="form-control" placeholder="Phone" autoComplete="off" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
       </AuthCard>
     </HeroPanel>
   );
@@ -526,10 +525,27 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
       <div className="row g-4">
         <div className="col-12" ref={adminWorkspaceRef}>
           {user.role === "CITIZEN" ? (
-            <SectionCard title="Raise a complaint" description="Upload exact images of the issue, submit the complaint, and track each step until resolution.">
-              {message ? <div className="alert alert-success py-2">{message}</div> : null}
-              <ComplaintForm form={form} setForm={setForm} files={files} setFiles={setFiles} onSubmit={submitComplaint} submitLabel="Submit Complaint" />
-            </SectionCard>
+            <div className="d-grid gap-4">
+              <SectionCard title="Raise a complaint" description="Upload exact images of the issue, submit the complaint, and track each step until resolution.">
+                {message ? <div className={`alert ${message.includes("successfully") ? "alert-success" : "alert-warning"} py-2`}>{message}</div> : null}
+                <ComplaintForm form={form} setForm={setForm} files={files} setFiles={setFiles} onSubmit={submitComplaint} submitLabel="Submit Complaint" />
+              </SectionCard>
+
+              <SectionCard title="My complaints" description="Follow progress, review uploaded evidence, and confirm when locality work is truly complete.">
+                <ComplaintTable
+                  complaints={complaintList}
+                  user={user}
+                  officers={[]}
+                  assignmentState={{}}
+                  onAssignmentChange={() => {}}
+                  onAssign={() => {}}
+                  onAutoAssign={() => {}}
+                  onOfficerUpdate={updateComplaint}
+                  onCitizenConfirm={confirmComplaint}
+                  onSelectComplaint={setSelectedComplaint}
+                />
+              </SectionCard>
+            </div>
           ) : null}
 
           {user.role === "ADMIN" ? (
@@ -689,22 +705,6 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
             </div>
           ) : null}
 
-          {user.role === "CITIZEN" ? (
-            <SectionCard title="My complaints" description="Follow progress, review uploaded evidence, and confirm when locality work is truly complete.">
-              <ComplaintTable
-                complaints={complaintList}
-                user={user}
-                officers={[]}
-                assignmentState={{}}
-                onAssignmentChange={() => {}}
-                onAssign={() => {}}
-                onAutoAssign={() => {}}
-                onOfficerUpdate={updateComplaint}
-                onCitizenConfirm={confirmComplaint}
-                onSelectComplaint={setSelectedComplaint}
-              />
-            </SectionCard>
-          ) : null}
         </div>
 
         {user.role !== "ADMIN" ? (

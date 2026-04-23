@@ -27,7 +27,7 @@ export function AuthCard({ title, subtitle, children, error, success, submitLabe
       <p className="text-secondary mb-4">{subtitle}</p>
       {success ? <div className="alert alert-success py-2">{success}</div> : null}
       {error ? <div className="alert alert-danger py-2">{error}</div> : null}
-      <form className="d-grid gap-3" onSubmit={onSubmit}>
+      <form className="d-grid gap-3" onSubmit={onSubmit} autoComplete="off">
         {children}
         <button className="btn btn-primary btn-lg" type="submit" disabled={submitting}>
           {submitLabel}
@@ -434,6 +434,16 @@ export function ComplaintTable({ complaints, user, officers, assignmentState, on
           </tr>
         </thead>
         <tbody>
+          {complaints.length === 0 ? (
+            <tr>
+              <td colSpan="6">
+                <div className="empty-table-state">
+                  <strong>No complaints found</strong>
+                  <span>Create a complaint from the form above and it will appear here for tracking.</span>
+                </div>
+              </td>
+            </tr>
+          ) : null}
           {complaints.map((complaint) => (
             <tr key={complaint.id}>
               <td>
