@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kiran Bugatha | Works</title>
+    <meta name="description" content="Selected project works by Kiran Bugatha with filters and detail pages." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="works">
+    <div class="grain"></div>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="./index.html">Kiran Bugatha</a>
+        <nav class="topnav">
+          <a data-nav="home" href="./index.html">Home</a>
+          <a data-nav="about" href="./about.html">About</a>
+          <a data-nav="works" href="./works.html">Works</a>
+          <a data-nav="contact" href="./contact.html">Contact</a>
+        </nav>
+      </header>
+
+      <main class="page">
+        <section class="section-block intro-block reveal">
+          <div class="section-head stacked-head">
+            <div>
+              <span class="section-kicker">Works</span>
+              <h1 class="page-title">Showcasing the best projects I have built so far.</h1>
+              <p class="page-copy wide-copy">Filter the projects by focus area and open each one for a richer project breakdown, process notes, and implementation highlights.</p>
+            </div>
+          </div>
+          <div class="filter-row" id="workFilters"></div>
+          <div class="work-grid" id="worksGrid"></div>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal" id="certificateModal" aria-hidden="true">
+      <div class="modal-backdrop" data-close-modal></div>
+      <div class="modal-card">
+        <button class="modal-close" type="button" data-close-modal>Close</button>
+        <div id="modalContent"></div>
+      </div>
+    </div>
+
+    <script src="./script.js"></script>
+  </body>
+</html>

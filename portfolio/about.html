@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kiran Bugatha | About</title>
+    <meta name="description" content="About Kiran Bugatha, including skills, education, experience, and certifications." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="about">
+    <div class="grain"></div>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="./index.html">Kiran Bugatha</a>
+        <nav class="topnav">
+          <a data-nav="home" href="./index.html">Home</a>
+          <a data-nav="about" href="./about.html">About</a>
+          <a data-nav="works" href="./works.html">Works</a>
+          <a data-nav="contact" href="./contact.html">Contact</a>
+        </nav>
+      </header>
+
+      <main class="page">
+        <section class="about-hero reveal">
+          <div class="about-photo-card about-photo-card-centered">
+            <img id="profilePhotoAbout" class="profile-photo profile-photo-circle profile-photo-about profile-photo-about-large" alt="Kiran Bugatha profile" />
+          </div>
+          <div class="about-copy-card about-copy-card-centered">
+            <h1 id="aboutName"></h1>
+            <p id="aboutRole" class="about-role-line"></p>
+            <div class="focus-pills" id="aboutFocus"></div>
+            <p id="aboutMainText" class="page-copy wide-copy about-main-copy"></p>
+            <div class="about-fact-strip">
+              <div class="summary-item">
+                <span class="summary-label">Degree</span>
+                <strong>B.Tech CSE</strong>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Internship</span>
+                <strong>IIDT Vijayawada</strong>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Core Stack</span>
+                <strong>Java, Spring Boot, MySQL</strong>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-block reveal delay-1">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Skills</span>
+              <h2>Tools and technologies I use to shape full-stack products.</h2>
+            </div>
+          </div>
+          <div class="skill-grid" id="skillsGrid"></div>
+        </section>
+
+        <section class="section-block reveal delay-2">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Experience</span>
+              <h2>Education, internship work, and technical growth over time.</h2>
+            </div>
+          </div>
+          <div class="timeline-list" id="timelineList"></div>
+        </section>
+
+        <section class="section-block reveal delay-3">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Certificates</span>
+              <h2>Open the gallery to explore certifications and participation records.</h2>
+            </div>
+          </div>
+          <div class="certificate-grid" id="certificateGrid"></div>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal" id="certificateModal" aria-hidden="true">
+      <div class="modal-backdrop" data-close-modal></div>
+      <div class="modal-card">
+        <button class="modal-close" type="button" data-close-modal>Close</button>
+        <div id="modalContent"></div>
+      </div>
+    </div>
+
+    <script src="./script.js"></script>
+  </body>
+</html>

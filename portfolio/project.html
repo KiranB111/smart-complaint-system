@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kiran Bugatha | Project Detail</title>
+    <meta name="description" content="Project detail page for Kiran Bugatha portfolio." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="project">
+    <div class="grain"></div>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="./index.html">Kiran Bugatha</a>
+        <nav class="topnav">
+          <a data-nav="home" href="./index.html">Home</a>
+          <a data-nav="about" href="./about.html">About</a>
+          <a data-nav="works" href="./works.html">Works</a>
+          <a data-nav="contact" href="./contact.html">Contact</a>
+        </nav>
+      </header>
+
+      <main class="page">
+        <section class="project-hero reveal" id="projectHero"></section>
+        <section class="section-block reveal delay-1" id="projectOverview"></section>
+        <section class="section-block reveal delay-2" id="projectDeepDive"></section>
+      </main>
+    </div>
+
+    <div class="modal" id="certificateModal" aria-hidden="true">
+      <div class="modal-backdrop" data-close-modal></div>
+      <div class="modal-card">
+        <button class="modal-close" type="button" data-close-modal>Close</button>
+        <div id="modalContent"></div>
+      </div>
+    </div>
+
+    <script src="./script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kiran Bugatha | Home</title>
+    <meta name="description" content="Advanced portfolio of Kiran Bugatha, Java Full-Stack Developer." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="home">
+    <div class="grain"></div>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="./index.html">Kiran Bugatha</a>
+        <nav class="topnav">
+          <a data-nav="home" href="./index.html">Home</a>
+          <a data-nav="about" href="./about.html">About</a>
+          <a data-nav="works" href="./works.html">Works</a>
+          <a data-nav="contact" href="./contact.html">Contact</a>
+        </nav>
+      </header>
+
+      <main class="page page-home">
+        <section class="hero-grid reveal">
+          <div class="hero-copy-card">
+            <div class="hero-intro-line">
+              <span class="eyebrow">Portfolio 2026</span>
+              <span class="status-pill">Open to full-stack roles</span>
+            </div>
+            <h1 id="homeName"></h1>
+            <p class="role-line" id="homeRole"></p>
+            <p class="lead-copy" id="homeIntro"></p>
+            <div class="hero-actions">
+              <a class="action-button action-primary" id="resumeButton" href="#">Download Resume</a>
+              <a class="action-button" href="./works.html">View Works</a>
+              <a class="action-button" href="./contact.html">Contact Me</a>
+            </div>
+            <div class="focus-pills" id="homeFocus"></div>
+            <div class="hero-summary-strip">
+              <div class="summary-item">
+                <span class="summary-label">Based in</span>
+                <strong>Andhra Pradesh, India</strong>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Speciality</span>
+                <strong>Spring Boot and Java apps</strong>
+              </div>
+              <div class="summary-item">
+                <span class="summary-label">Approach</span>
+                <strong>Clean backend, clear UI</strong>
+              </div>
+            </div>
+          </div>
+
+          <aside class="hero-visual-card reveal delay-1">
+            <div class="hero-visual-top">
+              <div class="profile-note-card hero-note-card">
+                <span class="section-kicker">Profile</span>
+                <p>
+                  Computer Science graduate building practical full-stack products with a strong
+                  backend foundation, reliable APIs, and product-focused project execution.
+                </p>
+              </div>
+              <div class="hero-side-points">
+                <div class="summary-item">
+                  <span class="summary-label">Current Focus</span>
+                  <strong>Full-stack applications with secure backend systems</strong>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">Strength</span>
+                  <strong>Spring Boot architecture, APIs, and practical product workflows</strong>
+                </div>
+              </div>
+            </div>
+            <div class="metric-grid" id="homeMetrics"></div>
+          </aside>
+        </section>
+
+        <section class="section-block reveal delay-2">
+          <div class="section-head">
+            <div>
+              <span class="section-kicker">Featured Works</span>
+              <h2>Projects designed with product thinking and backend depth.</h2>
+            </div>
+            <a class="section-link" href="./works.html">See all projects</a>
+          </div>
+          <div class="work-grid" id="homeFeaturedWorks"></div>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal" id="certificateModal" aria-hidden="true">
+      <div class="modal-backdrop" data-close-modal></div>
+      <div class="modal-card">
+        <button class="modal-close" type="button" data-close-modal>Close</button>
+        <div id="modalContent"></div>
+      </div>
+    </div>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
