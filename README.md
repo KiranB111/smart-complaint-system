@@ -323,10 +323,15 @@ Deploy the `backend` folder as a Docker web service on Render.
 Required environment variables:
 
 ```properties
-DB_URL=jdbc:mysql://your-host:3306/peoplevoice?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=Asia/Kolkata
+DB_URL=jdbc:mysql://your-aiven-host:your-aiven-port/defaultdb?sslMode=REQUIRED&allowPublicKeyRetrieval=true&serverTimezone=UTC
 DB_USERNAME=your_db_username
 DB_PASSWORD=your_db_password
 ```
+
+For Aiven MySQL, do not paste the service URI if it starts with `mysql://`.
+Render must receive a JDBC URL that starts with `jdbc:mysql://`, and the host,
+port, database name, username, and password should come from Aiven's connection
+details. A common Aiven username is `avnadmin`.
 
 Recommended optional environment variables:
 
