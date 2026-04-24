@@ -362,7 +362,8 @@ export function OfficerCreateForm({ form, setForm, onSubmit }) {
     <form className="d-grid gap-2" onSubmit={onSubmit}>
       <input className="form-control form-control-sm" placeholder="Officer name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
       <input className="form-control form-control-sm" placeholder="Officer email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-      <input className="form-control form-control-sm" type="password" placeholder="Temporary password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+      <input className="form-control form-control-sm" type="password" placeholder="Temporary password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} minLength={8} />
+      <small className="text-secondary">Password must start with a capital letter, be at least 8 characters, and include 1 special character.</small>
       <input className="form-control form-control-sm" placeholder="Phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
       <select className="form-select form-select-sm" value={form.availability} onChange={(e) => setForm({ ...form, availability: e.target.value })}>
         <option value="AVAILABLE">AVAILABLE</option>

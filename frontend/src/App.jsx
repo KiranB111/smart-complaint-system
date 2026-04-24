@@ -41,6 +41,9 @@ const emptyOfficer = {
   availability: "AVAILABLE"
 };
 
+const passwordRuleMessage = "Password must start with a capital letter, be at least 8 characters, and include 1 special character";
+const passwordRule = /^[A-Z](?=.*[^A-Za-z0-9]).{7,119}$/;
+
 function useSession() {
   const [user, setUser] = useState(() => {
     const raw = localStorage.getItem("pv_user");
@@ -64,12 +67,13 @@ function useSession() {
   return { user, saveSession, clearSession, setUser };
 }
 
-function LoginPage({ onLogin }) {
+function LoginPage({ onLogin, mode = "general" }) {
   const location = useLocation();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const registrationState = location.state;
+  const isOfficerLogin = mode === "officer";
 
   useEffect(() => {
     if (!registrationState?.message) return;
@@ -78,10 +82,18 @@ function LoginPage({ onLogin }) {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (!form.email.trim() || !form.password) {
+      setError("Email and password are required");
+      return;
+    }
     try {
       setSubmitting(true);
       setError("");
       const { data } = await authApi.login(form);
+      if (isOfficerLogin && data.user?.role !== "OFFICER") {
+        setError("This login is only for officer accounts");
+        return;
+      }
       onLogin(data);
     } catch (err) {
       setError(err.response?.data?.message || "Unable to sign in");
@@ -93,17 +105,21 @@ function LoginPage({ onLogin }) {
   return (
     <HeroPanel>
       <AuthCard
-        title="Secure civic grievance access"
-        subtitle="Citizens can register, upload complaint evidence, and track progress while admins and officers coordinate the full workflow."
+        title={isOfficerLogin ? "Officer sign in" : "Secure civic grievance access"}
+        subtitle={isOfficerLogin
+          ? "Officers can sign in here to manage assigned complaints, update progress, and upload completion proof."
+          : "Citizens can register, upload complaint evidence, and track progress while admins and officers coordinate the full workflow."}
         error={error}
         success={registrationState?.message || ""}
-        submitLabel={submitting ? "Signing in..." : "Login"}
+        submitLabel={submitting ? "Signing in..." : (isOfficerLogin ? "Officer Login" : "Login")}
         onSubmit={submit}
         submitting={submitting}
-        footer={<span>First time here? <Link to="/register">Create your citizen account</Link></span>}
+        footer={isOfficerLogin
+          ? <span>Citizen or admin? <Link to="/login">Use the main login</Link></span>
+          : <span>First time here? <Link to="/register">Create your citizen account</Link> or <Link to="/officer/login">Officer login</Link></span>}
       >
-        <input className="form-control" type="email" placeholder="Email" autoComplete="off" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-        <input className="form-control" type="password" placeholder="Password" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        <input className="form-control" type="email" placeholder="Email" autoComplete="off" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+        <input className="form-control" type="password" placeholder="Password" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
       </AuthCard>
     </HeroPanel>
   );
@@ -119,6 +135,7 @@ function HomePage() {
         </div>
         <div className="landing-actions">
           <Link className="btn btn-outline-dark" to="/login">Login</Link>
+          <Link className="btn btn-outline-dark" to="/officer/login">Officer Login</Link>
           <Link className="btn btn-dark" to="/register">Register</Link>
         </div>
       </header>
@@ -135,6 +152,7 @@ function HomePage() {
             <div className="landing-actions">
               <Link className="btn btn-dark btn-lg" to="/register">Create Citizen Account</Link>
               <Link className="btn btn-outline-dark btn-lg" to="/login">Sign In</Link>
+              <Link className="btn btn-outline-dark btn-lg" to="/officer/login">Officer Login</Link>
             </div>
           </div>
           <div className="landing-panel">
@@ -197,8 +215,8 @@ function RegisterPage() {
       phone: form.phone.trim()
     };
 
-    if (!payload.name || !payload.email || !payload.password) {
-      setError("Name, email, and password are required");
+    if (!payload.name || !payload.email || !payload.password || !payload.phone) {
+      setError("Name, email, password, and phone are required");
       return;
     }
 
@@ -207,8 +225,8 @@ function RegisterPage() {
       return;
     }
 
-    if (payload.password.length < 6) {
-      setError("Password must be at least 6 characters");
+    if (!passwordRule.test(payload.password)) {
+      setError(passwordRuleMessage);
       return;
     }
 
@@ -238,12 +256,13 @@ function RegisterPage() {
         submitLabel={submitting ? "Creating account..." : "Register"}
         onSubmit={submit}
         submitting={submitting}
-        footer={<span>Already registered? <Link to="/login">Login here</Link></span>}
+        footer={<span>Already registered? <Link to="/login">Citizen/Admin login</Link> or <Link to="/officer/login">Officer login</Link></span>}
       >
         <input className="form-control" placeholder="Name" autoComplete="off" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
         <input className="form-control" type="email" placeholder="Email" autoComplete="off" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-        <input className="form-control" type="password" placeholder="Password" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} minLength={6} required />
-        <input className="form-control" placeholder="Phone" autoComplete="off" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+        <input className="form-control" type="password" placeholder="Password" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} minLength={8} required />
+        <small className="text-secondary">{passwordRuleMessage}</small>
+        <input className="form-control" placeholder="Phone" autoComplete="off" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required />
       </AuthCard>
     </HeroPanel>
   );
@@ -440,8 +459,13 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
 
   const createOfficer = async (event) => {
     event.preventDefault();
+    if (!passwordRule.test(officerForm.password)) {
+      setMessage(passwordRuleMessage);
+      return;
+    }
     await userApi.createOfficer(officerForm);
     setOfficerForm(emptyOfficer);
+    setMessage("Officer account created successfully.");
     await Promise.all([loadOfficers(), loadNotifications()]);
   };
 
@@ -602,6 +626,7 @@ function Dashboard({ user, onLogout, onUserRefresh }) {
                       <h3 className="workspace-title">Officer management</h3>
                       <p className="text-secondary">Create officers and monitor availability and ratings.</p>
                     </div>
+                    {message ? <div className={`alert ${message.includes("successfully") ? "alert-success" : "alert-warning"} py-2`}>{message}</div> : null}
                     <OfficerCreateForm form={officerForm} setForm={setOfficerForm} onSubmit={createOfficer} />
                     <hr />
                     <OfficerManagementList
@@ -737,6 +762,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={user ? <Dashboard user={user} onLogout={clearSession} onUserRefresh={setUser} /> : <HomePage />} />
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage onLogin={saveSession} />} />
+      <Route path="/officer/login" element={user ? <Navigate to="/" replace /> : <LoginPage onLogin={saveSession} mode="officer" />} />
       <Route path="/register" element={user ? <Navigate to="/" replace /> : <RegisterPage />} />
     </Routes>
   );
